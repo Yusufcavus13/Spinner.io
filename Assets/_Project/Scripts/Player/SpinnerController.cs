@@ -3,11 +3,7 @@ using UnityEngine;
 
 namespace SpinForward.Player
 {
-    /// <summary>
-    /// Physics-driven spinner. The joystick steers it around the XZ plane via a
-    /// Rigidbody, while a visual child keeps spinning around Y. Because it moves
-    /// with real velocity, it will knock cubes around once we add them.
-    /// </summary>
+    
     [RequireComponent(typeof(Rigidbody))]
     public class SpinnerController : MonoBehaviour
     {

@@ -5,10 +5,7 @@ using UnityEngine.UI;
 
 namespace SpinForward.UI
 {
-    /// <summary>
-    /// A single shop button for one upgrade. Shows "Title Lv.N" and its price,
-    /// buys on click, and greys out when the player can't afford the next level.
-    /// </summary>
+    
     [RequireComponent(typeof(Button))]
     public class UpgradeButton : MonoBehaviour
     {
@@ -58,7 +55,6 @@ namespace SpinForward.UI
             UpgradeSystem.Instance.Buy(kind);
         }
 
-        // Wallet fires an int; we don't need it, we just re-check affordability.
         private void OnBalanceChanged(int _) => UpdateInteractable();
 
         private void Refresh()

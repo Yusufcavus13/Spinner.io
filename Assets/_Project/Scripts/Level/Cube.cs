@@ -14,7 +14,7 @@ namespace SpinForward.Level
         [Tooltip("How hard the cube is flung when it shatters.")]
         [SerializeField] private float knockForce = 6f;
         [Tooltip("Seconds the shattered debris lives before it is removed.")]
-        [SerializeField] private float debrisLifetime = 1.5f;
+        [SerializeField] private float debrisLifetime = 1.2f;
 
         public event System.Action<Cube> Smashed;
 

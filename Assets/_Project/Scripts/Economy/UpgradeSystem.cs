@@ -2,11 +2,7 @@ using UnityEngine;
 
 namespace SpinForward.Economy
 {
-    /// <summary>
-    /// Holds the three upgrades and is the single point other systems read from
-    /// (spinner reads Rotate, cubes read Power, money reads Income). Singleton so
-    /// they can reach it without wiring a reference into every object.
-    /// </summary>
+    
     public class UpgradeSystem : MonoBehaviour
     {
         public static UpgradeSystem Instance { get; private set; }
@@ -46,13 +42,11 @@ namespace SpinForward.Economy
             }
         }
 
-        /// <summary>Buys a level of the given upgrade. Returns false if unaffordable.</summary>
         public bool Buy(UpgradeKind kind)
         {
             return Get(kind).TryPurchase(wallet);
         }
 
-        // Sensible defaults when the component is first added in the editor.
         private void Reset()
         {
             rotate = new Upgrade("Rotate", 720f, 180f, 10, 1.6f);

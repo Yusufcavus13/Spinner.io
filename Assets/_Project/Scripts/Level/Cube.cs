@@ -2,11 +2,7 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    /// <summary>
-    /// One breakable cube. Sits frozen (kinematic) so the wall holds its shape,
-    /// then wakes up, gets knocked away and shatters when the spinner hits it.
-    /// Raises <see cref="Smashed"/> so the wall (and later the economy) can react.
-    /// </summary>
+
     [RequireComponent(typeof(Rigidbody))]
     public class Cube : MonoBehaviour
     {
@@ -19,9 +15,11 @@ namespace SpinForward.Level
         [Tooltip("Seconds the shattered debris lives before it is removed.")]
         [SerializeField] private float debrisLifetime = 1.5f;
 
-        /// <summary>Fires once, when this cube shatters. Carries itself so listeners
-        /// know where it happened (useful for the money particle in the next step).</summary>
         public event System.Action<Cube> Smashed;
+
+        /// <summary>Global signal fired by ANY cube when it shatters, carrying the
+        /// world position. Lets money/sfx/effects react without referencing cubes.</summary>
+        public static event System.Action<Vector3> AnyCubeSmashed;
 
         private Rigidbody rb;
         private bool isSmashed;
@@ -48,13 +46,13 @@ namespace SpinForward.Level
         {
             isSmashed = true;
 
-            // Wake up the physics and fling the cube away from the spinner.
             rb.isKinematic = false;
             Vector3 dir = (transform.position - hitFrom).normalized + Vector3.up * 0.5f;
             rb.AddForce(dir * knockForce, ForceMode.Impulse);
             rb.AddTorque(Random.insideUnitSphere * knockForce, ForceMode.Impulse);
 
             Smashed?.Invoke(this);
+            AnyCubeSmashed?.Invoke(transform.position);
             Destroy(gameObject, debrisLifetime);
         }
     }

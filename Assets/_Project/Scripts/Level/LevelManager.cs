@@ -3,12 +3,6 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    /// <summary>
-    /// Runs one level at a time as a tiny state machine: Playing -> Won or Lost.
-    /// You get a limited time to clear the wall. Clear it in time -> win -> next
-    /// (bigger) level. Run out of time -> lose -> retry the same level. Money is
-    /// kept across attempts because we never reload the scene.
-    /// </summary>
     public class LevelManager : MonoBehaviour
     {
         private enum State { Playing, Won, Lost }
@@ -100,7 +94,6 @@ namespace SpinForward.Level
             if (levels == null || levels.Length == 0)
                 return null;
 
-            // Clamp so late levels reuse the last designed one instead of erroring.
             int index = Mathf.Clamp(level - 1, 0, levels.Length - 1);
             return levels[index];
         }

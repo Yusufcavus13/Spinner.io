@@ -2,11 +2,6 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    /// <summary>
-    /// Spawns a flat grid of <see cref="Cube"/>s on the ground to form the level's
-    /// "image". Counts them down as they shatter and raises <see cref="Cleared"/>
-    /// when the last one is gone (that hooks up to the success panel later).
-    /// </summary>
     public class CubeWall : MonoBehaviour
     {
         [Header("Grid")]
@@ -18,7 +13,6 @@ namespace SpinForward.Level
         [Tooltip("Height of the cube centers above the ground.")]
         [SerializeField] private float groundHeight = 0.5f;
 
-        /// <summary>Fires once, when every cube in the grid has been smashed.</summary>
         public event System.Action Cleared;
 
         private int remaining;
@@ -40,7 +34,6 @@ namespace SpinForward.Level
             {
                 for (int c = 0; c < columns; c++)
                 {
-                    // Center the grid on this object's position, laid flat on XZ.
                     float x = (c - (columns - 1) / 2f) * spacing;
                     float z = (r - (rows - 1) / 2f) * spacing;
                     Vector3 pos = transform.position + new Vector3(x, groundHeight, z);
@@ -54,7 +47,7 @@ namespace SpinForward.Level
 
         private void OnCubeSmashed(Cube cube)
         {
-            cube.Smashed -= OnCubeSmashed; // stop listening to a cube that's leaving
+            cube.Smashed -= OnCubeSmashed; 
             remaining--;
             if (remaining <= 0)
             {

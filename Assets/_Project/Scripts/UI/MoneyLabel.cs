@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace SpinForward.UI
 {
-    /// <summary>
-    /// Shows the wallet balance on screen. Subscribes to the wallet's change event
-    /// instead of reading the value every frame.
-    /// </summary>
+
     [RequireComponent(typeof(TMP_Text))]
     public class MoneyLabel : MonoBehaviour
     {

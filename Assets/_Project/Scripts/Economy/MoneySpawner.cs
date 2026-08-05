@@ -3,11 +3,6 @@ using UnityEngine;
 
 namespace SpinForward.Economy
 {
-    /// <summary>
-    /// Listens for any cube shattering and drops a <see cref="MoneyOrb"/> at that
-    /// spot, aimed at the spinner. Because it hooks the global cube event, cubes
-    /// never need to know money exists. The Income upgrade will scale rewardPerCube.
-    /// </summary>
     public class MoneySpawner : MonoBehaviour
     {
         [SerializeField] private MoneyOrb orbPrefab;
@@ -30,8 +25,13 @@ namespace SpinForward.Economy
             if (orbPrefab == null || target == null)
                 return;
 
+            // Income upgrade multiplies the base reward.
+            int reward = rewardPerCube;
+            if (UpgradeSystem.Instance != null)
+                reward = Mathf.Max(1, Mathf.RoundToInt(rewardPerCube * UpgradeSystem.Instance.Income.Value));
+
             MoneyOrb orb = Instantiate(orbPrefab, position, Quaternion.identity);
-            orb.Launch(target, rewardPerCube);
+            orb.Launch(target, reward);
         }
     }
 }

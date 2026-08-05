@@ -1,3 +1,4 @@
+using SpinForward.Economy;
 using UnityEngine;
 
 namespace SpinForward.Player
@@ -20,7 +21,7 @@ namespace SpinForward.Player
         [SerializeField] private float acceleration = 25f;
 
         [Header("Spin")]
-        [Tooltip("Visual spin speed in degrees/second. Driven by the Rotate upgrade later.")]
+        [Tooltip("Fallback spin speed (deg/sec) used when no UpgradeSystem is present.")]
         [SerializeField] private float spinSpeed = 720f;
 
         private Rigidbody rb;
@@ -32,8 +33,14 @@ namespace SpinForward.Player
 
         private void Update()
         {
+            // Rotate upgrade controls the spin speed; fall back to the serialized
+            // value if the upgrade system isn't in the scene.
+            float spin = spinSpeed;
+            if (UpgradeSystem.Instance != null)
+                spin = UpgradeSystem.Instance.Rotate.Value;
+
             if (visual != null)
-                visual.Rotate(0f, spinSpeed * Time.deltaTime, 0f, Space.Self);
+                visual.Rotate(0f, spin * Time.deltaTime, 0f, Space.Self);
         }
 
         private void FixedUpdate()

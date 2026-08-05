@@ -2,17 +2,11 @@ using UnityEngine;
 
 namespace SpinForward.Economy
 {
-    /// <summary>
-    /// A single coin that pops out of a smashed cube, homes in on the spinner
-    /// (accelerating as it goes), and pays into the <see cref="Wallet"/> on arrival.
-    /// Moves purely by transform - no physics, no collider needed.
-    /// </summary>
     public class MoneyOrb : MonoBehaviour
     {
-        [Tooltip("Short pause before it starts flying, so the pop reads.")]
-        [SerializeField] private float startDelay = 0.15f;
+        [SerializeField] private float startDelay = 0.25f;
         [SerializeField] private float startSpeed = 2f;
-        [SerializeField] private float acceleration = 22f;
+        [SerializeField] private float acceleration = 16f;
         [Tooltip("How close counts as 'arrived'.")]
         [SerializeField] private float catchDistance = 0.35f;
 
@@ -33,7 +27,7 @@ namespace SpinForward.Economy
         {
             if (target == null)
             {
-                Destroy(gameObject); // spinner gone, don't linger
+                Destroy(gameObject); 
                 return;
             }
 

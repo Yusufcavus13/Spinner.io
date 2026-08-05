@@ -1,3 +1,4 @@
+using SpinForward.Economy;
 using UnityEngine;
 
 namespace SpinForward.Level
@@ -17,8 +18,6 @@ namespace SpinForward.Level
 
         public event System.Action<Cube> Smashed;
 
-        /// <summary>Global signal fired by ANY cube when it shatters, carrying the
-        /// world position. Lets money/sfx/effects react without referencing cubes.</summary>
         public static event System.Action<Vector3> AnyCubeSmashed;
 
         private Rigidbody rb;
@@ -47,9 +46,16 @@ namespace SpinForward.Level
             isSmashed = true;
 
             rb.isKinematic = false;
+
+            // Power upgrade multiplies how violently the cube is flung.
+            float power = 1f;
+            if (UpgradeSystem.Instance != null)
+                power = UpgradeSystem.Instance.Power.Value;
+            float force = knockForce * power;
+
             Vector3 dir = (transform.position - hitFrom).normalized + Vector3.up * 0.5f;
-            rb.AddForce(dir * knockForce, ForceMode.Impulse);
-            rb.AddTorque(Random.insideUnitSphere * knockForce, ForceMode.Impulse);
+            rb.AddForce(dir * force, ForceMode.Impulse);
+            rb.AddTorque(Random.insideUnitSphere * force, ForceMode.Impulse);
 
             Smashed?.Invoke(this);
             AnyCubeSmashed?.Invoke(transform.position);

@@ -13,7 +13,6 @@ namespace SpinForward.Economy
 
         public int Balance { get; private set; }
 
-        /// <summary>Fires whenever the balance changes, carrying the new total.</summary>
         public event System.Action<int> BalanceChanged;
 
         private void Awake()
@@ -34,6 +33,18 @@ namespace SpinForward.Economy
 
             Balance += amount;
             BalanceChanged?.Invoke(Balance);
+        }
+
+        /// <summary>Tries to spend money. Returns false (and changes nothing) if
+        /// the player can't afford it, so callers can just check the bool.</summary>
+        public bool TrySpend(int amount)
+        {
+            if (amount <= 0 || Balance < amount)
+                return false;
+
+            Balance -= amount;
+            BalanceChanged?.Invoke(Balance);
+            return true;
         }
     }
 }

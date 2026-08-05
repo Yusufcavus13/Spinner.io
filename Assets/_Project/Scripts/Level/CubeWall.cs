@@ -38,8 +38,11 @@ namespace SpinForward.Level
             {
                 for (int c = 0; c < columns; c++)
                 {
+                    // Centered left-right, but grows FORWARD only (+Z) from this
+                    // object's position, so the near edge never creeps back onto
+                    // the spinner's start point as the wall gets bigger.
                     float x = (c - (columns - 1) / 2f) * spacing;
-                    float z = (r - (rows - 1) / 2f) * spacing;
+                    float z = r * spacing;
                     Vector3 pos = transform.position + new Vector3(x, groundHeight, z);
 
                     Cube cube = Instantiate(cubePrefab, pos, Quaternion.identity, transform);

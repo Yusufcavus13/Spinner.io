@@ -17,21 +17,18 @@ namespace SpinForward.Level
         [SerializeField] private CubeWall wall;
         [SerializeField] private Transform spinner;
 
-        [Header("Rules")]
-        [Tooltip("Seconds you get to clear the wall.")]
-        [SerializeField] private float attemptDuration = 20f;
-
-        [Header("Level size")]
-        [SerializeField] private int startColumns = 5;
-        [SerializeField] private int startRows = 5;
-        [Tooltip("Extra columns AND rows added each level.")]
-        [SerializeField] private int growthPerLevel = 1;
+        [Header("Levels")]
+        [Tooltip("Designed levels, played in order. Past the last one, it repeats the last level.")]
+        [SerializeField] private LevelData[] levels;
 
         [Header("UI")]
         [SerializeField] private GameObject winPanel;
         [SerializeField] private GameObject losePanel;
         [SerializeField] private TMP_Text timerLabel;
         [SerializeField] private TMP_Text levelLabel;
+
+        private const float DefaultDuration = 20f;
+        private const int DefaultSize = 5;
 
         private State state;
         private int level = 1;
@@ -84,13 +81,28 @@ namespace SpinForward.Level
 
             ResetSpinner();
 
-            timeLeft = attemptDuration;
+            LevelData data = GetLevelData();
+            timeLeft = data != null ? data.attemptDuration : DefaultDuration;
+
             if (levelLabel != null)
                 levelLabel.text = "Level " + level;
 
-            int size = growthPerLevel * (level - 1);
             if (wall != null)
-                wall.Build(startColumns + size, startRows + size);
+            {
+                int cols = data != null ? data.columns : DefaultSize;
+                int rows = data != null ? data.rows : DefaultSize;
+                wall.Build(cols, rows);
+            }
+        }
+
+        private LevelData GetLevelData()
+        {
+            if (levels == null || levels.Length == 0)
+                return null;
+
+            // Clamp so late levels reuse the last designed one instead of erroring.
+            int index = Mathf.Clamp(level - 1, 0, levels.Length - 1);
+            return levels[index];
         }
 
         private void ResetSpinner()

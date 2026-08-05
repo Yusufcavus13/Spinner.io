@@ -1,3 +1,4 @@
+using SpinForward.Core;
 using SpinForward.Economy;
 using TMPro;
 using UnityEngine;
@@ -5,7 +6,7 @@ using UnityEngine.UI;
 
 namespace SpinForward.UI
 {
-    
+
     [RequireComponent(typeof(Button))]
     public class UpgradeButton : MonoBehaviour
     {
@@ -13,6 +14,7 @@ namespace SpinForward.UI
         [SerializeField] private TMP_Text titleLabel;
         [SerializeField] private TMP_Text costLabel;
         [SerializeField] private Button button;
+        [SerializeField] private AudioClip buyClip;
 
         private Upgrade upgrade;
 
@@ -52,7 +54,9 @@ namespace SpinForward.UI
 
         private void OnClick()
         {
-            UpgradeSystem.Instance.Buy(kind);
+            bool bought = UpgradeSystem.Instance.Buy(kind);
+            if (bought && Sfx.Instance != null)
+                Sfx.Instance.Play(buyClip, 0.6f);
         }
 
         private void OnBalanceChanged(int _) => UpdateInteractable();

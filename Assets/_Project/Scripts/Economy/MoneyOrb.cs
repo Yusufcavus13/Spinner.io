@@ -1,3 +1,4 @@
+using SpinForward.Core;
 using UnityEngine;
 
 namespace SpinForward.Economy
@@ -9,6 +10,11 @@ namespace SpinForward.Economy
         [SerializeField] private float acceleration = 16f;
         [Tooltip("How close counts as 'arrived'.")]
         [SerializeField] private float catchDistance = 0.35f;
+
+        [Header("Audio")]
+        [SerializeField] private AudioClip collectClip;
+        [Range(0f, 1f)]
+        [SerializeField] private float collectVolume = 0.35f;
 
         private Transform target;
         private int value;
@@ -42,6 +48,8 @@ namespace SpinForward.Economy
             {
                 if (Wallet.Instance != null)
                     Wallet.Instance.Add(value);
+                if (Sfx.Instance != null)
+                    Sfx.Instance.Play(collectClip, collectVolume);
                 Destroy(gameObject);
             }
         }

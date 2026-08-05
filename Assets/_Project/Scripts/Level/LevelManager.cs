@@ -1,3 +1,4 @@
+using SpinForward.Core;
 using TMPro;
 using UnityEngine;
 
@@ -20,6 +21,10 @@ namespace SpinForward.Level
         [SerializeField] private GameObject losePanel;
         [SerializeField] private TMP_Text timerLabel;
         [SerializeField] private TMP_Text levelLabel;
+
+        [Header("Audio")]
+        [SerializeField] private AudioClip winClip;
+        [SerializeField] private AudioClip loseClip;
 
         private const float DefaultDuration = 20f;
         private const int DefaultSize = 5;
@@ -122,6 +127,7 @@ namespace SpinForward.Level
             state = State.Won;
             Time.timeScale = 0f; // freeze the action behind the panel
             if (winPanel != null) winPanel.SetActive(true);
+            if (Sfx.Instance != null) Sfx.Instance.Play(winClip, 0.7f, 0f);
         }
 
         private void Lose()
@@ -129,6 +135,7 @@ namespace SpinForward.Level
             state = State.Lost;
             Time.timeScale = 0f;
             if (losePanel != null) losePanel.SetActive(true);
+            if (Sfx.Instance != null) Sfx.Instance.Play(loseClip, 0.7f, 0f);
         }
 
         // ---- Hooked to the panel buttons in the Inspector ----

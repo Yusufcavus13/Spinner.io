@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace SpinForward.Player
@@ -41,6 +42,11 @@ namespace SpinForward.Player
 
             if (pressed && !active)
             {
+                // Ignore presses that land on a UI element (e.g. upgrade buttons),
+                // so tapping the shop doesn't also steer the spinner.
+                if (IsPointerOverUI())
+                    return;
+
                 active = true;
                 Show();
                 startLocal = ScreenToCanvas(screenPos);
@@ -62,6 +68,11 @@ namespace SpinForward.Player
                 Direction = Vector2.zero;
                 Hide();
             }
+        }
+
+        private static bool IsPointerOverUI()
+        {
+            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
         }
 
         private Vector2 ScreenToCanvas(Vector2 screenPos)

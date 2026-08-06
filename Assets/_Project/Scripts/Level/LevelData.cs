@@ -21,6 +21,9 @@ namespace SpinForward.Level
         [Tooltip("Chance (0 to 1) for a cube to be an explosive Bomb Cube.")]
         [Range(0f, 1f)] public float bombCubeChance = 0f;
         
+        [Tooltip("Maximum number of bombs allowed in this level.")]
+        public int maxBombs = 1;
+        
         [Tooltip("Chance (0 to 1) for a cube to be an unbreakable Steel Cube.")]
         [Range(0f, 1f)] public float steelCubeChance = 0f;
     }

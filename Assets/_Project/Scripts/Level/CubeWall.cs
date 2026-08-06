@@ -39,6 +39,8 @@ namespace SpinForward.Level
 
             Clear();
 
+            int spawnedBombs = 0; // Bomba sayısını takip et
+
             for (int r = 0; r < rows; r++)
             {
                 for (int c = 0; c < columns; c++)
@@ -57,10 +59,17 @@ namespace SpinForward.Level
                     {
                         health = data.cubeHealth;
                         float rand = Random.value;
-                        if (rand < data.bombCubeChance)
+                        // Sadece limite ulaşmadıysak bomba oluştur
+                        if (rand < data.bombCubeChance && spawnedBombs < data.maxBombs)
+                        {
                             type = CubeType.Bomb;
+                            health *= 3; // Bomba küpler 3 kat daha dayanıklı (kırması zor) olsun
+                            spawnedBombs++; // Sayacı artır
+                        }
                         else if (rand < data.bombCubeChance + data.steelCubeChance)
+                        {
                             type = CubeType.Steel;
+                        }
                     }
                     
                     cube.Init(type, health);
@@ -73,8 +82,12 @@ namespace SpinForward.Level
                     else
                         cube.SetColor(ColorFor(c, r, columns, rows));
 
-                    cube.Smashed += OnCubeSmashed;
-                    remaining++;
+                    // Sadece kırılamayan Çelik küpler DIŞINDAKİLERİ hedefe dahil et
+                    if (type != CubeType.Steel)
+                    {
+                        cube.Smashed += OnCubeSmashed;
+                        remaining++;
+                    }
                 }
             }
 

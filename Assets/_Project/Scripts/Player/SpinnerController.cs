@@ -37,7 +37,7 @@ namespace SpinForward.Player
                 spin = UpgradeSystem.Instance.Rotate.Value;
 
             if (visual != null)
-                visual.Rotate(0f, spin * Time.deltaTime, 0f, Space.Self);
+                visual.Rotate(0f, spin * Time.deltaTime, 0f, Space.World);
         }
 
         private void FixedUpdate()

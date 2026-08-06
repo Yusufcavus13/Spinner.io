@@ -108,12 +108,18 @@ namespace SpinForward.Level
             if (spinner == null)
                 return;
 
-            spinner.position = spinnerStart;
+            // Teleporting a dynamic Rigidbody needs more than transform.position:
+            // zero the motion, move the physics body itself, then force the physics
+            // engine to accept the new position immediately (before the wall builds).
             if (spinnerBody != null)
             {
                 spinnerBody.linearVelocity = Vector3.zero;
                 spinnerBody.angularVelocity = Vector3.zero;
+                spinnerBody.position = spinnerStart;
             }
+
+            spinner.position = spinnerStart;
+            Physics.SyncTransforms();
         }
 
         private void OnWallCleared()

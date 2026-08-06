@@ -107,3 +107,5 @@ MonoBehaviour:
   startSpeed: 2
   acceleration: 22
   catchDistance: 0.35
+  collectClip: {fileID: 8300000, guid: e918e92747a2a43e99a71e5327204d71, type: 3}
+  collectVolume: 0.35

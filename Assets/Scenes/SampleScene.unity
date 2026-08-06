@@ -313,6 +313,7 @@ MonoBehaviour:
   titleLabel: {fileID: 740092026}
   costLabel: {fileID: 376920765}
   button: {fileID: 0}
+  buyClip: {fileID: 8300000, guid: e6ac4ce89ae114be18b5f77cbafd784e, type: 3}
 --- !u!114 &70771213
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1097,14 +1098,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpinForward.Level.LevelManager
   wall: {fileID: 1484853623}
   spinner: {fileID: 1119152793}
-  attemptDuration: 20
-  startColumns: 5
-  startRows: 5
-  growthPerLevel: 1
+  levels:
+  - {fileID: 11400000, guid: e1b3fae30081f4928bda61ae56a7912b, type: 2}
+  - {fileID: 11400000, guid: 0d4c9ecdbf77b44b2a3d54243380a2e2, type: 2}
+  - {fileID: 11400000, guid: f8bb9af1e51564cd6a89c79d44d8d97f, type: 2}
   winPanel: {fileID: 1961052533}
   losePanel: {fileID: 1213850693}
   timerLabel: {fileID: 1908437836}
   levelLabel: {fileID: 880265178}
+  winClip: {fileID: 8300000, guid: ac43453d287b04a96b5c981e665b206b, type: 3}
+  loseClip: {fileID: 8300000, guid: a6027c59ce29341ad9a4400f04b91450, type: 3}
 --- !u!4 &396269920
 Transform:
   m_ObjectHideFlags: 0
@@ -1469,6 +1472,149 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &708554868
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 708554871}
+  - component: {fileID: 708554870}
+  - component: {fileID: 708554869}
+  m_Layer: 0
+  m_Name: Sfx
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &708554869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708554868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c76e8eadbe1a14b179689bd651b76545, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpinForward.Core.Sfx
+  source: {fileID: 708554870}
+--- !u!82 &708554870
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708554868}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!4 &708554871
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708554868}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 67.5984, y: 50.69879, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &735246985
 GameObject:
   m_ObjectHideFlags: 0
@@ -1796,6 +1942,7 @@ MonoBehaviour:
   titleLabel: {fileID: 1920798526}
   costLabel: {fileID: 1945309465}
   button: {fileID: 0}
+  buyClip: {fileID: 8300000, guid: e6ac4ce89ae114be18b5f77cbafd784e, type: 3}
 --- !u!114 &772717823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2764,6 +2911,7 @@ MonoBehaviour:
   titleLabel: {fileID: 58456735}
   costLabel: {fileID: 804642652}
   button: {fileID: 0}
+  buyClip: {fileID: 8300000, guid: e6ac4ce89ae114be18b5f77cbafd784e, type: 3}
 --- !u!114 &1215270309
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3148,6 +3296,54 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1748781851
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1748781853}
+  - component: {fileID: 1748781852}
+  m_Layer: 0
+  m_Name: SmashEffects
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1748781852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748781851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 204bc20d7108949be833181c61f290e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpinForward.Level.SmashEffects
+  smashClip: {fileID: 8300000, guid: c27dfee3d2853402b9db79b9d23875df, type: 3}
+  volume: 0.5
+  burstPrefab: {fileID: 584441875855715397, guid: 6aebb212cac8b49408f5cfefbbb12afe, type: 3}
+  burstLifetime: 2
+--- !u!4 &1748781853
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748781851}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 67.5984, y: 50.69879, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4187,3 +4383,5 @@ SceneRoots:
   - {fileID: 796280937}
   - {fileID: 1239943442}
   - {fileID: 396269920}
+  - {fileID: 708554871}
+  - {fileID: 1748781853}

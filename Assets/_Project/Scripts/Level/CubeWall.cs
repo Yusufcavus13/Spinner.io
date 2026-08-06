@@ -2,11 +2,7 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    /// <summary>
-    /// Builds a flat grid of <see cref="Cube"/>s on demand and reports when the
-    /// grid is fully smashed. The <see cref="LevelManager"/> drives it: it decides
-    /// the size and calls <see cref="Build"/> at the start of each attempt.
-    /// </summary>
+    
     public class CubeWall : MonoBehaviour
     {
         [Header("Grid")]
@@ -25,17 +21,15 @@ namespace SpinForward.Level
         [SerializeField] private float brightness = 0.95f;
         [Tooltip("How much darker the back rows get, for depth (0 = flat).")]
         [Range(0f, 0.6f)]
-        [SerializeField] private float rowShade = 0.25f;
+        [SerializeField] private float rowShade = 0.35f;
 
-        /// <summary>Fires once, when the last cube of the current grid is smashed.</summary>
         public event System.Action Cleared;
 
         public int Remaining => remaining;
 
         private int remaining;
 
-        /// <summary>Removes any current cubes and spawns a fresh cols x rows grid.</summary>
-        public void Build(int columns, int rows)
+        public void Build(int columns, int rows, LevelData data = null)
         {
             if (cubePrefab == null)
             {
@@ -49,34 +43,63 @@ namespace SpinForward.Level
             {
                 for (int c = 0; c < columns; c++)
                 {
-                    // Centered left-right, but grows FORWARD only (+Z) from this
-                    // object's position, so the near edge never creeps back onto
-                    // the spinner's start point as the wall gets bigger.
+                    
                     float x = (c - (columns - 1) / 2f) * spacing;
                     float z = r * spacing;
                     Vector3 pos = transform.position + new Vector3(x, groundHeight, z);
 
                     Cube cube = Instantiate(cubePrefab, pos, Quaternion.identity, transform);
-                    cube.SetColor(ColorFor(c, r, columns, rows));
+                    
+                    CubeType type = CubeType.Normal;
+                    int health = 1;
+                    
+                    if (data != null)
+                    {
+                        health = data.cubeHealth;
+                        float rand = Random.value;
+                        if (rand < data.bombCubeChance)
+                            type = CubeType.Bomb;
+                        else if (rand < data.bombCubeChance + data.steelCubeChance)
+                            type = CubeType.Steel;
+                    }
+                    
+                    cube.Init(type, health);
+
+                    // Renk ataması (Bombalar kırmızı, Çelikler siyah, Normaller gökkuşağı)
+                    if (type == CubeType.Bomb)
+                        cube.SetColor(Color.red);
+                    else if (type == CubeType.Steel)
+                        cube.SetColor(Color.black);
+                    else
+                        cube.SetColor(ColorFor(c, r, columns, rows));
+
                     cube.Smashed += OnCubeSmashed;
                     remaining++;
                 }
             }
+
+            // Duvar inşa edildikten sonra kamerayı geriye çek
+            if (SpinForward.CameraControl.CameraController.Instance != null)
+            {
+                SpinForward.CameraControl.CameraController.Instance.FrameWall(columns, rows, spacing);
+            }
         }
 
-        /// <summary>Picks a cube's color: hue spread across columns, darker toward the back.</summary>
         private Color ColorFor(int col, int row, int columns, int rows)
         {
-            // col/columns (not columns-1) so the last column doesn't wrap back to red.
-            float hue = columns > 0 ? (float)col / columns : 0f;
+            // Normal küplerin rengi (Hue) 0 ile 1 arasındadır. 0 ve 1 Kırmızı demektir.
+            // Bomba küp kırmızı olduğu için, normal küplerin kırmızı olmasını engellemeliyiz.
+            // Bu yüzden Hue değerini 0.15 (Sarı/Yeşil) ile 0.85 (Mor/Pembe) arasına sıkıştırıyoruz.
+            float huePercent = columns > 0 ? (float)col / columns : 0f;
+            float hue = Mathf.Lerp(0.15f, 0.85f, huePercent); 
+            
             Color baseColor = Color.HSVToRGB(hue, saturation, brightness);
 
-            // Fade back rows a touch so the wall reads as 3D depth.
+            // Arka sıraları hafif koyulaştırıyoruz (Derinlik hissi)
             float depth = rows > 1 ? (float)row / (rows - 1) : 0f;
             return Color.Lerp(baseColor, baseColor * 0.5f, depth * rowShade);
         }
 
-        /// <summary>Destroys every cube (smashed debris included) and resets the count.</summary>
         public void Clear()
         {
             for (int i = transform.childCount - 1; i >= 0; i--)

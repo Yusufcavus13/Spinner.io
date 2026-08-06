@@ -14,4 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpinForward.Level.LevelData
   columns: 6
   rows: 6
-  attemptDuration: 30
+  attemptDuration: 35
+  cubeHealth: 1
+  bombCubeChance: 0.05
+  steelCubeChance: 0.2

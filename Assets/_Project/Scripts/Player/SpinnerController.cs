@@ -1,4 +1,5 @@
 using SpinForward.Economy;
+using SpinForward.Level;
 using UnityEngine;
 
 namespace SpinForward.Player
@@ -41,6 +42,13 @@ namespace SpinForward.Player
 
         private void FixedUpdate()
         {
+            // Sadece oyun oynanıyorken hareket etmesine izin ver
+            if (LevelManager.Instance != null && !LevelManager.Instance.IsPlaying)
+            {
+                rb.linearVelocity = Vector3.zero;
+                return;
+            }
+
             Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
             Vector3 dir = new Vector3(input.x, 0f, input.y);
             Vector3 targetVel = Vector3.ClampMagnitude(dir, 1f) * moveSpeed;

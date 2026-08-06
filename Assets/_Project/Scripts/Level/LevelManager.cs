@@ -7,7 +7,10 @@ namespace SpinForward.Level
 {
     public class LevelManager : MonoBehaviour
     {
-        private enum State { Playing, Won, Lost }
+        public static LevelManager Instance { get; private set; }
+        public bool IsPlaying => state == State.Playing;
+
+        private enum State { WaitingToStart, Playing, Won, Lost }
 
         [Header("Scene refs")]
         [SerializeField] private CubeWall wall;
@@ -18,6 +21,7 @@ namespace SpinForward.Level
         [SerializeField] private LevelData[] levels;
 
         [Header("UI")]
+        [SerializeField] private GameObject tapToPlayPanel;
         [SerializeField] private GameObject winPanel;
         [SerializeField] private GameObject losePanel;
         [SerializeField] private TMP_Text timerLabel;
@@ -38,6 +42,13 @@ namespace SpinForward.Level
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
             if (spinner != null)
             {
                 spinnerStart = spinner.position;
@@ -60,6 +71,17 @@ namespace SpinForward.Level
 
         private void Update()
         {
+            if (state == State.WaitingToStart)
+            {
+                // Ekrana dokunulduğunda oyunu başlat
+                if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+                {
+                    state = State.Playing;
+                    if (tapToPlayPanel != null) tapToPlayPanel.SetActive(false);
+                }
+                return;
+            }
+
             if (state != State.Playing)
                 return;
 
@@ -71,11 +93,12 @@ namespace SpinForward.Level
                 Lose();
         }
 
-        private void StartLevel()
+        private void StartLevel(bool autoStart = false)
         {
-            state = State.Playing;
+            state = autoStart ? State.Playing : State.WaitingToStart;
             Time.timeScale = 1f;
 
+            if (tapToPlayPanel != null) tapToPlayPanel.SetActive(!autoStart);
             if (winPanel != null) winPanel.SetActive(false);
             if (losePanel != null) losePanel.SetActive(false);
 
@@ -85,6 +108,10 @@ namespace SpinForward.Level
             LevelData data = GetLevelData();
             timeLeft = data != null ? data.attemptDuration : DefaultDuration;
 
+            // Süreyi daha oyun başlamadan ekranda göster
+            if (timerLabel != null)
+                timerLabel.text = Mathf.CeilToInt(Mathf.Max(0f, timeLeft)).ToString();
+
             if (levelLabel != null)
                 levelLabel.text = "Level " + level;
 
@@ -92,7 +119,7 @@ namespace SpinForward.Level
             {
                 int cols = data != null ? data.columns : DefaultSize;
                 int rows = data != null ? data.rows : DefaultSize;
-                wall.Build(cols, rows);
+                wall.Build(cols, rows, data);
             }
         }
 
@@ -152,12 +179,12 @@ namespace SpinForward.Level
             if (state != State.Won)
                 return;
             level++;
-            StartLevel();
+            StartLevel(true); // Next Level'a geçince direkt başla
         }
 
         public void Retry()
         {
-            StartLevel();
+            StartLevel(true); // Tekrar denendiğinde de direkt başla
         }
     }
 }

@@ -22,7 +22,6 @@ namespace SpinForward.Level
 
         private Rigidbody rb;
         private Renderer rend;
-        private MaterialPropertyBlock mpb;
         private bool isSmashed;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -34,7 +33,8 @@ namespace SpinForward.Level
             rend = GetComponent<Renderer>();
         }
 
-        /// <summary>Tints this cube without spawning a new material instance.</summary>
+        /// <summary>Tints this cube. Uses a per-instance material (reliable in URP,
+        /// where MaterialPropertyBlock colors can be swallowed by the SRP Batcher).</summary>
         public void SetColor(Color color)
         {
             if (rend == null)
@@ -42,10 +42,7 @@ namespace SpinForward.Level
             if (rend == null)
                 return;
 
-            mpb ??= new MaterialPropertyBlock();
-            rend.GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColorId, color);
-            rend.SetPropertyBlock(mpb);
+            rend.material.SetColor(BaseColorId, color);
         }
 
         private void OnCollisionEnter(Collision collision)

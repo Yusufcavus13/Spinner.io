@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SpinForward.Core;
 using UnityEngine;
 
@@ -5,6 +6,18 @@ namespace SpinForward.Economy
 {
     public class MoneyOrb : MonoBehaviour
     {
+        // Every live orb registers here so a level change can wipe them all at once.
+        private static readonly List<MoneyOrb> Active = new List<MoneyOrb>();
+
+        /// <summary>Destroys every coin currently in flight (called on level change).</summary>
+        public static void ClearAll()
+        {
+            for (int i = Active.Count - 1; i >= 0; i--)
+                if (Active[i] != null)
+                    Destroy(Active[i].gameObject);
+            Active.Clear();
+        }
+
         [SerializeField] private float startDelay = 0.25f;
         [SerializeField] private float startSpeed = 2f;
         [SerializeField] private float acceleration = 16f;
@@ -20,6 +33,9 @@ namespace SpinForward.Economy
         private int value;
         private float speed;
         private float timer;
+
+        private void Awake() => Active.Add(this);
+        private void OnDestroy() => Active.Remove(this);
 
         public void Launch(Transform spinner, int reward)
         {

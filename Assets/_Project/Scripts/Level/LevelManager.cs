@@ -1,4 +1,5 @@
 using SpinForward.Core;
+using SpinForward.Economy;
 using TMPro;
 using UnityEngine;
 
@@ -78,6 +79,7 @@ namespace SpinForward.Level
             if (winPanel != null) winPanel.SetActive(false);
             if (losePanel != null) losePanel.SetActive(false);
 
+            MoneyOrb.ClearAll(); // drop any coins still flying from the previous attempt
             ResetSpinner();
 
             LevelData data = GetLevelData();

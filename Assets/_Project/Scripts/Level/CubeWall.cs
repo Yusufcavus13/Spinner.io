@@ -17,8 +17,12 @@ namespace SpinForward.Level
         [SerializeField] private float groundHeight = 0.5f;
 
         [Header("Look")]
-        [Tooltip("Optional color ramp across columns. If empty, a rainbow is used.")]
-        [SerializeField] private Gradient palette;
+        [Tooltip("Color richness of the wall (0 = grey, 1 = vivid).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float saturation = 0.7f;
+        [Tooltip("Overall brightness of the cubes.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float brightness = 0.95f;
         [Tooltip("How much darker the back rows get, for depth (0 = flat).")]
         [Range(0f, 0.6f)]
         [SerializeField] private float rowShade = 0.25f;
@@ -60,14 +64,12 @@ namespace SpinForward.Level
             }
         }
 
-        /// <summary>Picks a cube's color: hue across columns, darker toward the back.</summary>
+        /// <summary>Picks a cube's color: hue spread across columns, darker toward the back.</summary>
         private Color ColorFor(int col, int row, int columns, int rows)
         {
-            float t = columns > 1 ? (float)col / (columns - 1) : 0.5f;
-
-            Color baseColor = (palette != null && palette.colorKeys.Length > 0)
-                ? palette.Evaluate(t)
-                : Color.HSVToRGB(t, 0.65f, 1f); // fallback rainbow
+            // col/columns (not columns-1) so the last column doesn't wrap back to red.
+            float hue = columns > 0 ? (float)col / columns : 0f;
+            Color baseColor = Color.HSVToRGB(hue, saturation, brightness);
 
             // Fade back rows a touch so the wall reads as 3D depth.
             float depth = rows > 1 ? (float)row / (rows - 1) : 0f;

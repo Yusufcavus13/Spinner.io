@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SpinForward.Economy;
 using UnityEngine;
 
@@ -26,6 +27,11 @@ namespace SpinForward.Level
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
+        // One shared material per distinct color, reused across every cube and every
+        // level. No per-cube material instances -> no GC churn, and the SRP Batcher
+        // still batches them since they all use the same URP Lit shader.
+        private static readonly Dictionary<Color, Material> ColorMaterials = new Dictionary<Color, Material>();
+
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
@@ -33,8 +39,7 @@ namespace SpinForward.Level
             rend = GetComponent<Renderer>();
         }
 
-        /// <summary>Tints this cube. Uses a per-instance material (reliable in URP,
-        /// where MaterialPropertyBlock colors can be swallowed by the SRP Batcher).</summary>
+        /// <summary>Tints this cube by pointing it at a pooled, shared colored material.</summary>
         public void SetColor(Color color)
         {
             if (rend == null)
@@ -42,7 +47,13 @@ namespace SpinForward.Level
             if (rend == null)
                 return;
 
-            rend.material.SetColor(BaseColorId, color);
+            if (!ColorMaterials.TryGetValue(color, out Material mat))
+            {
+                mat = new Material(rend.sharedMaterial);
+                mat.SetColor(BaseColorId, color);
+                ColorMaterials[color] = mat;
+            }
+            rend.sharedMaterial = mat;
         }
 
         private void OnCollisionEnter(Collision collision)

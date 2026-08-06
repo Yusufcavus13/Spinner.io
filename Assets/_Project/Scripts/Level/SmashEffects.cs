@@ -3,11 +3,6 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    /// <summary>
-    /// Turns the global "a cube was smashed" signal into juice: a smash sound and
-    /// a particle burst at the hit point. Listens to the event, so it never needs
-    /// a reference to any cube.
-    /// </summary>
     public class SmashEffects : MonoBehaviour
     {
         [SerializeField] private AudioClip smashClip;

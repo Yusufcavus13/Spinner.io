@@ -16,6 +16,13 @@ namespace SpinForward.Level
         [Tooltip("Height of the cube centers above the ground.")]
         [SerializeField] private float groundHeight = 0.5f;
 
+        [Header("Look")]
+        [Tooltip("Optional color ramp across columns. If empty, a rainbow is used.")]
+        [SerializeField] private Gradient palette;
+        [Tooltip("How much darker the back rows get, for depth (0 = flat).")]
+        [Range(0f, 0.6f)]
+        [SerializeField] private float rowShade = 0.25f;
+
         /// <summary>Fires once, when the last cube of the current grid is smashed.</summary>
         public event System.Action Cleared;
 
@@ -46,10 +53,25 @@ namespace SpinForward.Level
                     Vector3 pos = transform.position + new Vector3(x, groundHeight, z);
 
                     Cube cube = Instantiate(cubePrefab, pos, Quaternion.identity, transform);
+                    cube.SetColor(ColorFor(c, r, columns, rows));
                     cube.Smashed += OnCubeSmashed;
                     remaining++;
                 }
             }
+        }
+
+        /// <summary>Picks a cube's color: hue across columns, darker toward the back.</summary>
+        private Color ColorFor(int col, int row, int columns, int rows)
+        {
+            float t = columns > 1 ? (float)col / (columns - 1) : 0.5f;
+
+            Color baseColor = (palette != null && palette.colorKeys.Length > 0)
+                ? palette.Evaluate(t)
+                : Color.HSVToRGB(t, 0.65f, 1f); // fallback rainbow
+
+            // Fade back rows a touch so the wall reads as 3D depth.
+            float depth = rows > 1 ? (float)row / (rows - 1) : 0f;
+            return Color.Lerp(baseColor, baseColor * 0.5f, depth * rowShade);
         }
 
         /// <summary>Destroys every cube (smashed debris included) and resets the count.</summary>

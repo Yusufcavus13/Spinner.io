@@ -144,7 +144,6 @@ namespace SpinForward.Level
             if (Sfx.Instance != null) Sfx.Instance.Play(loseClip, 0.7f, 0f);
         }
 
-        // ---- Hooked to the panel buttons in the Inspector ----
 
         public void NextLevel()
         {

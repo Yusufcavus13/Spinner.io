@@ -9,7 +9,7 @@ namespace SpinForward.Economy
         [SerializeField] private float startSpeed = 2f;
         [SerializeField] private float acceleration = 16f;
         [Tooltip("How close counts as 'arrived'.")]
-        [SerializeField] private float catchDistance = 0.35f;
+        [SerializeField] private float catchDistance = 0.25f;
 
         [Header("Audio")]
         [SerializeField] private AudioClip collectClip;
@@ -21,7 +21,6 @@ namespace SpinForward.Economy
         private float speed;
         private float timer;
 
-        /// <summary>Called by the spawner right after Instantiate.</summary>
         public void Launch(Transform spinner, int reward)
         {
             target = spinner;

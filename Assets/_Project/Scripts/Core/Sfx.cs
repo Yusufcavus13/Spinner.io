@@ -2,11 +2,6 @@ using UnityEngine;
 
 namespace SpinForward.Core
 {
-    /// <summary>
-    /// One shared audio player for short sound effects. Anyone calls
-    /// <c>Sfx.Instance.Play(clip)</c>. Uses PlayOneShot so many sounds can overlap,
-    /// and jitters the pitch a touch so repeated smashes don't sound identical.
-    /// </summary>
     [RequireComponent(typeof(AudioSource))]
     public class Sfx : MonoBehaviour
     {

@@ -21,12 +21,31 @@ namespace SpinForward.Level
         public static event System.Action<Vector3> AnyCubeSmashed;
 
         private Rigidbody rb;
+        private Renderer rend;
+        private MaterialPropertyBlock mpb;
         private bool isSmashed;
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
             rb.isKinematic = true; // frozen in place until hit
+            rend = GetComponent<Renderer>();
+        }
+
+        /// <summary>Tints this cube without spawning a new material instance.</summary>
+        public void SetColor(Color color)
+        {
+            if (rend == null)
+                rend = GetComponent<Renderer>();
+            if (rend == null)
+                return;
+
+            mpb ??= new MaterialPropertyBlock();
+            rend.GetPropertyBlock(mpb);
+            mpb.SetColor(BaseColorId, color);
+            rend.SetPropertyBlock(mpb);
         }
 
         private void OnCollisionEnter(Collision collision)

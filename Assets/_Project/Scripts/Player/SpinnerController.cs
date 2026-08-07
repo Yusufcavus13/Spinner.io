@@ -139,7 +139,7 @@ namespace SpinForward.Player
                 cloneRb.mass = 2f;
                 cloneRb.linearVelocity = new Vector3(Random.Range(-10f, 10f), 0, Random.Range(-10f, 10f));
                 
-                // Zıplaklık için PhysicMaterial
+                // Zıplaklık için PhysicsMaterial
                 SphereCollider col = clone.GetComponent<SphereCollider>();
                 PhysicsMaterial bMat = new PhysicsMaterial("BouncyClone");
                 bMat.bounciness = 1f;

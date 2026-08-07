@@ -8,19 +8,16 @@ namespace SpinForward.Editor
         [MenuItem("Tools/SpinForward/1 Tek Tıkla Resimleri Düzelt")]
         public static void Fix()
         {
-            string[] paths = new string[] {
-                "Assets/_Project/Art/buzzsaw_texture_1786021637446.jpg",
-                "Assets/_Project/Art/ui_button_shiny_1786021668223.jpg",
-                "Assets/_Project/Art/arena_floor_texture_1786021608817.jpg"
-            };
+            string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/_Project/Art" });
             
-            foreach (var path in paths)
+            foreach (string guid in guids)
             {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
                 TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
                 if (importer != null)
                 {
-                    // Buton ve Testere için Sprite ayarı
-                    if (path.Contains("buzzsaw") || path.Contains("ui_button"))
+                    // Buton, Testere ve Fever arayüz resimleri için Sprite ayarı
+                    if (path.Contains("buzzsaw") || path.Contains("ui_button") || path.Contains("fever"))
                     {
                         importer.textureType = TextureImporterType.Sprite;
                         importer.spriteImportMode = SpriteImportMode.Single;
@@ -28,10 +25,11 @@ namespace SpinForward.Editor
                         importer.SaveAndReimport();
                         Debug.Log("[SpinForward] Başarıyla Sprite yapıldı: " + path);
                     }
-                    else // Arena zemini için Default ayarı
+                    else if (path.Contains("arena_floor")) // Zemin için Default ayarı
                     {
                         importer.textureType = TextureImporterType.Default;
                         importer.SaveAndReimport();
+                        Debug.Log("[SpinForward] Başarıyla Default Doku yapıldı: " + path);
                     }
                 }
             }

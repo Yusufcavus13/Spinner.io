@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c43a1e6ddb1d44173a8c2c0810be4042, type: 3}
+  m_Name: Level_2
+  m_EditorClassIdentifier: Assembly-CSharp::SpinForward.Level.LevelData
+  columns: 5
+  rows: 5
+  shape: 2
+  attemptDuration: 24
+  cubeHealth: 1
+  bombCubeChance: 0.03
+  maxBombs: 1
+  steelCubeChance: 0
+  iceCubeChance: 0
+  shieldCubeChance: 0
+  splitCubeChance: 0
+  vortexCount: 0
+  isMoving: 1
+  alternateRowMovement: 0
+  moveSpeed: 1.7
+  moveDistance: 2.4
+  isBreathing: 0
+  breathingPushForce: 18

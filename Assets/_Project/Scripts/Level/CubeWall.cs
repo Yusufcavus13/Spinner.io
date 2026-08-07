@@ -28,6 +28,26 @@ namespace SpinForward.Level
         public int Remaining => remaining;
 
         private int remaining;
+        
+        // Dynamic Movement Variables
+        private bool isMoving;
+        private float moveSpeed;
+        private float moveDistance;
+        private Vector3 initialPosition;
+        private bool alternateRowMovement;
+        
+        // Physics Fix
+        private struct CubeData
+        {
+            public Cube cube;
+            public Vector3 baseLocalPos;
+            public int rowIndex;
+        }
+        private System.Collections.Generic.List<CubeData> activeCubes = new System.Collections.Generic.List<CubeData>();
+        
+        // Repulsive Breathing Variables
+        private bool isBreathing;
+        private float breathingPushForce;
 
         public void Build(int columns, int rows, LevelData data = null)
         {
@@ -39,16 +59,47 @@ namespace SpinForward.Level
 
             Clear();
 
-            int spawnedBombs = 0; // Bomba sayısını takip et
+            int spawnedBombs = 0; 
+            
+            GridShape shape = data != null ? data.shape : GridShape.Square;
+            alternateRowMovement = data != null ? data.alternateRowMovement : false;
 
             for (int r = 0; r < rows; r++)
             {
                 for (int c = 0; c < columns; c++)
                 {
+                    // Şekle göre filtreleme
+                    bool shouldSpawn = true;
+                    if (shape == GridShape.Circle)
+                    {
+                        float centerCol = (columns - 1) / 2f;
+                        float centerRow = (rows - 1) / 2f;
+                        float radius = Mathf.Min(columns, rows) / 2f;
+                        float dist = Vector2.Distance(new Vector2(c, r), new Vector2(centerCol, centerRow));
+                        if (dist > radius) shouldSpawn = false;
+                    }
+                    else if (shape == GridShape.Triangle)
+                    {
+                        float centerCol = (columns - 1) / 2f;
+                        float widthAtRow = columns * (1f - (float)r / rows);
+                        if (Mathf.Abs(c - centerCol) > widthAtRow / 2f) shouldSpawn = false;
+                    }
+                    else if (shape == GridShape.Diamond)
+                    {
+                        float centerCol = (columns - 1) / 2f;
+                        float centerRow = (rows - 1) / 2f;
+                        float normX = Mathf.Abs(c - centerCol) / (columns / 2.2f);
+                        float normY = Mathf.Abs(r - centerRow) / (rows / 2.2f);
+                        if (normX + normY > 1f) shouldSpawn = false;
+                    }
+                    
+                    if (!shouldSpawn) continue;
+
                     
                     float x = (c - (columns - 1) / 2f) * spacing;
                     float z = r * spacing;
-                    Vector3 pos = transform.position + new Vector3(x, groundHeight, z);
+                    Vector3 localPos = new Vector3(x, groundHeight, z);
+                    Vector3 pos = transform.position + localPos;
 
                     Cube cube = Instantiate(cubePrefab, pos, Quaternion.identity, transform);
                     
@@ -59,42 +110,148 @@ namespace SpinForward.Level
                     {
                         health = data.cubeHealth;
                         float rand = Random.value;
-                        // Sadece limite ulaşmadıysak bomba oluştur
-                        if (rand < data.bombCubeChance && spawnedBombs < data.maxBombs)
+                        
+                        float tBomb = data.bombCubeChance;
+                        float tSteel = tBomb + data.steelCubeChance;
+                        float tIce = tSteel + data.iceCubeChance;
+                        float tShield = tIce + data.shieldCubeChance;
+                        float tSplit = tShield + data.splitCubeChance;
+                        
+                        if (rand < tBomb && spawnedBombs < data.maxBombs)
                         {
                             type = CubeType.Bomb;
-                            health *= 3; // Bomba küpler 3 kat daha dayanıklı (kırması zor) olsun
-                            spawnedBombs++; // Sayacı artır
+                            health *= 3; 
+                            spawnedBombs++;
                         }
-                        else if (rand < data.bombCubeChance + data.steelCubeChance)
-                        {
-                            type = CubeType.Steel;
-                        }
+                        else if (rand < tSteel) type = CubeType.Steel;
+                        else if (rand < tIce) type = CubeType.Ice;
+                        else if (rand < tShield) type = CubeType.Shield;
+                        else if (rand < tSplit) type = CubeType.Split;
                     }
                     
                     cube.Init(type, health);
 
-                    // Renk ataması (Bombalar kırmızı, Çelikler siyah, Normaller gökkuşağı)
+                    // Renk ataması
                     if (type == CubeType.Bomb)
                         cube.SetColor(Color.red);
                     else if (type == CubeType.Steel)
                         cube.SetColor(Color.black);
-                    else
+                    else if (type == CubeType.Normal)
                         cube.SetColor(ColorFor(c, r, columns, rows));
 
-                    // Sadece kırılamayan Çelik küpler DIŞINDAKİLERİ hedefe dahil et
                     if (type != CubeType.Steel)
                     {
                         cube.Smashed += OnCubeSmashed;
                         remaining++;
                     }
+                    
+                    activeCubes.Add(new CubeData { cube = cube, baseLocalPos = localPos, rowIndex = r });
                 }
             }
 
-            // Duvar inşa edildikten sonra kamerayı geriye çek
+            // Spawn Vortex Hazards outside the grid
+            if (data != null && data.vortexCount > 0)
+            {
+                for (int i = 0; i < data.vortexCount; i++)
+                {
+                    GameObject vObj = new GameObject("VortexHazard");
+                    vObj.transform.SetParent(transform);
+                    
+                    // Rastgele sol veya sağ tarafı seç
+                    float side = (Random.value > 0.5f) ? 1f : -1f;
+                    // Grid'in genişliğine göre dışarıda bir x pozisyonu
+                    float x = side * (columns * spacing * 0.5f + Random.Range(2f, 4f));
+                    // Grid'in uzunluğuna (Z ekseni) denk gelen rastgele bir z pozisyonu
+                    float z = Random.Range(0f, rows * spacing);
+                    
+                    vObj.transform.position = transform.position + new Vector3(x, groundHeight, z);
+                    vObj.AddComponent<VortexHazard>();
+                }
+            }
+
             if (SpinForward.CameraControl.CameraController.Instance != null)
             {
                 SpinForward.CameraControl.CameraController.Instance.FrameWall(columns, rows, spacing);
+            }
+            
+            if (data != null)
+            {
+                isMoving = data.isMoving;
+                moveSpeed = data.moveSpeed;
+                moveDistance = data.moveDistance;
+                
+                isBreathing = data.isBreathing;
+                breathingPushForce = data.breathingPushForce;
+            }
+            else
+            {
+                isMoving = false;
+                isBreathing = false;
+            }
+            
+            initialPosition = transform.position;
+            transform.localScale = Vector3.one;
+        }
+        
+        private void Update()
+        {
+            if (remaining <= 0) return;
+            if (isBreathing)
+            {
+                float sineValue = Mathf.Sin(Time.time * moveSpeed);
+                float scalePulse = 1f + sineValue * 0.3f;
+                transform.localScale = Vector3.one * scalePulse;
+            }
+        }
+        
+        private void FixedUpdate()
+        {
+            if (remaining <= 0) return;
+            
+            if (isMoving || isBreathing)
+            {
+                float sineVal = Mathf.Sin(Time.time * moveSpeed);
+                Vector3 currentScale = transform.localScale;
+                
+                for (int i = 0; i < activeCubes.Count; i++)
+                {
+                    CubeData cd = activeCubes[i];
+                    if (cd.cube == null || cd.cube.IsSmashed) continue;
+                    
+                    float xOffset = 0f;
+                    if (isMoving)
+                    {
+                        float direction = 1f;
+                        if (alternateRowMovement) direction = (cd.rowIndex % 2 == 0) ? 1f : -1f;
+                        xOffset = sineVal * moveDistance * direction;
+                    }
+                    
+                    Vector3 scaledLocalPos = new Vector3(cd.baseLocalPos.x * currentScale.x, cd.baseLocalPos.y * currentScale.y, cd.baseLocalPos.z * currentScale.z);
+                    Vector3 offsetVec = new Vector3(xOffset * currentScale.x, 0, 0);
+                    
+                    Vector3 targetPos = initialPosition + scaledLocalPos + offsetVec;
+                    cd.cube.MoveTo(targetPos);
+                }
+            }
+            
+            if (isBreathing)
+            {
+                if (Mathf.Cos(Time.time * moveSpeed) > 0.3f)
+                {
+                    if (SpinForward.Player.SpinnerController.Instance != null)
+                    {
+                        Rigidbody spinnerRb = SpinForward.Player.SpinnerController.Instance.GetComponent<Rigidbody>();
+                        if (spinnerRb != null)
+                        {
+                            Vector3 toSpinner = spinnerRb.position - transform.position;
+                            if (toSpinner.magnitude < (5f * transform.localScale.x))
+                            {
+                                Vector3 pushDir = toSpinner.normalized;
+                                spinnerRb.AddForce(pushDir * (breathingPushForce * 10f) * Time.fixedDeltaTime, ForceMode.Force);
+                            }
+                        }
+                    }
+                }
             }
         }
 

@@ -31,54 +31,64 @@ namespace SpinForward.Player
         
         private void Start()
         {
-            initialScale = transform.localScale; // Artık çarkın kendisini (Collider dahil) baz alıyoruz
+            initialScale = transform.localScale; 
             
             if (trail != null)
             {
                 initialTrailColor = trail.startColor;
             }
-            
-            InvokeRepeating(nameof(UpdateVisuals), 0.5f, 0.5f);
         }
         
-        private void UpdateVisuals()
+        private void Update()
         {
-            if (UpgradeSystem.Instance == null) return;
+            float powerLevel = UpgradeSystem.Instance != null ? UpgradeSystem.Instance.Power.Level : 0f;
+            float rotateLevel = UpgradeSystem.Instance != null ? UpgradeSystem.Instance.Rotate.Level : 0f;
             
-            Upgrade powerUpgrade = UpgradeSystem.Instance.Power;
-            Upgrade rotateUpgrade = UpgradeSystem.Instance.Rotate;
-            
-            UpdateScale(powerUpgrade);
-            UpdateTrail(powerUpgrade, rotateUpgrade);
+            UpdateScale(powerLevel);
+            UpdateTrail(powerLevel, rotateLevel);
         }
         
-        private void UpdateScale(Upgrade powerUpgrade)
+        private void UpdateScale(float powerLevel)
         {
-            float scaleMultiplier = 1f + (powerUpgrade.Level * scalePerPowerLevel);
+            float scaleMultiplier = 1f + (powerLevel * scalePerPowerLevel);
             scaleMultiplier = Mathf.Min(scaleMultiplier, maxScaleMultiplier);
+            
+            // Fever Mode devasa büyüme bonusu!
+            if (SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive)
+            {
+                scaleMultiplier *= 1.5f; // Fever modunda %50 daha büyük!
+            }
             
             Vector3 targetScale = initialScale * scaleMultiplier;
             transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * 5f);
         }
         
-        private void UpdateTrail(Upgrade powerUpgrade, Upgrade rotateUpgrade)
+        private void UpdateTrail(float powerLevel, float rotateLevel)
         {
             if (trail == null) return;
             
-            float speedPercent = rotateUpgrade.Level / 20f; // Assuming 20 is max or high level
+            float speedPercent = rotateLevel / 20f; 
             trail.time = Mathf.Lerp(0.5f, 1.5f, speedPercent);
             
             Color targetColor = initialTrailColor;
-            if (powerUpgrade.Level > 5)
+            
+            // Fever Mode Alev Efekti!
+            bool isFever = SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive;
+            
+            if (isFever)
             {
-                targetColor = Color.Lerp(initialTrailColor, highPowerColor, powerUpgrade.Level / 15f);
+                targetColor = new Color(1f, 0.2f, 0f); // Ateşli turuncu/kırmızı
             }
-            else if (rotateUpgrade.Level > 5)
+            else if (powerLevel > 5)
             {
-                targetColor = Color.Lerp(initialTrailColor, highSpeedColor, rotateUpgrade.Level / 15f);
+                targetColor = Color.Lerp(initialTrailColor, highPowerColor, powerLevel / 15f);
+            }
+            else if (rotateLevel > 5)
+            {
+                targetColor = Color.Lerp(initialTrailColor, highSpeedColor, rotateLevel / 15f);
             }
             
-            trail.startColor = Color.Lerp(trail.startColor, targetColor, Time.deltaTime * 2f);
+            trail.startColor = Color.Lerp(trail.startColor, targetColor, Time.deltaTime * (isFever ? 10f : 2f));
             trail.endColor = new Color(targetColor.r, targetColor.g, targetColor.b, 0f);
         }
     }

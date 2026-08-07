@@ -10,8 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c43a1e6ddb1d44173a8c2c0810be4042, type: 3}
-  m_Name: Level_1
+  m_Name: Level_19
   m_EditorClassIdentifier: Assembly-CSharp::SpinForward.Level.LevelData
-  columns: 4
-  rows: 4
-  attemptDuration: 25
+  columns: 9
+  rows: 9
+  shape: 3
+  attemptDuration: 58
+  cubeHealth: 2
+  bombCubeChance: 0.25
+  maxBombs: 5
+  steelCubeChance: 0.14
+  iceCubeChance: 0.05
+  shieldCubeChance: 0.08
+  splitCubeChance: 0.03
+  vortexCount: 2
+  isMoving: 0
+  alternateRowMovement: 0
+  moveSpeed: 3.4
+  moveDistance: 5.8
+  isBreathing: 0
+  breathingPushForce: 43.5

@@ -11,6 +11,12 @@ namespace SpinForward.Level
         [Header("Pixel Art Data")]
         [Tooltip("The 2D sprite to convert into 3D voxels. Must have Read/Write Enabled in Import Settings!")]
         public Texture2D levelSprite;
+
+        [Tooltip("Sprite is sampled down to at most this many cubes PER SIDE. Lower = fewer cubes = way faster. 96 is ~9000 cubes (heavy!), 40 is ~1600.")]
+        [Range(8, 96)] public int maxResolution = 40;
+
+        [Tooltip("Snap sprite colors to this many steps per channel: fewer distinct colors = fewer materials = fewer draw calls. 6 = up to 216 colors.")]
+        [Range(2, 16)] public int colorSteps = 6;
         
         [Header("Grid Size & Shape (Fallback if no sprite)")]
         [Min(1)] public int columns = 5;

@@ -66,16 +66,31 @@ namespace SpinForward.Level
             Color[] pixels = null;
             if (sprite != null)
             {
-                columns = sprite.width;
-                rows = sprite.height;
                 try
                 {
-                    pixels = sprite.GetPixels();
+                    // Sample the sprite DOWN to a capped grid instead of one cube per
+                    // pixel. A 96x96 photo at maxResolution 40 becomes 40x40 (~1600
+                    // cubes) instead of ~9200 - the difference between smooth and dead.
+                    int cap = Mathf.Max(8, data.maxResolution);
+                    columns = Mathf.Min(sprite.width, cap);
+                    rows = Mathf.Min(sprite.height, cap);
+
+                    pixels = new Color[columns * rows];
+                    for (int yy = 0; yy < rows; yy++)
+                    {
+                        for (int xx = 0; xx < columns; xx++)
+                        {
+                            float u = (xx + 0.5f) / columns;
+                            float v = (yy + 0.5f) / rows;
+                            pixels[yy * columns + xx] = Quantize(sprite.GetPixelBilinear(u, v), data.colorSteps);
+                        }
+                    }
                 }
                 catch (UnityException e)
                 {
                     Debug.LogWarning("[CubeWall] Cannot read texture: " + sprite.name + ". Make sure 'Read/Write Enabled' is checked in import settings! " + e.Message);
                     sprite = null;
+                    pixels = null;
                 }
             }
 
@@ -347,6 +362,20 @@ namespace SpinForward.Level
                     }
                 }
             }
+        }
+
+        // Snaps a color to a coarse grid so many pixels share the exact same color
+        // (and therefore the same pooled material -> far fewer draw calls).
+        private static Color Quantize(Color c, int steps)
+        {
+            if (steps <= 1)
+                return c;
+            float s = steps - 1;
+            return new Color(
+                Mathf.Round(c.r * s) / s,
+                Mathf.Round(c.g * s) / s,
+                Mathf.Round(c.b * s) / s,
+                c.a);
         }
 
         private Color ColorFor(int col, int row, int columns, int rows)

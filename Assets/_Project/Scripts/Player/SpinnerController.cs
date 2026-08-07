@@ -25,11 +25,21 @@ namespace SpinForward.Player
         
         private Rigidbody rb;
         
+        [Header("Lean (tilt toward movement)")]
+        [Tooltip("Max degrees the spinner tilts into its travel direction.")]
+        [SerializeField] private float maxLeanAngle = 18f;
+        [SerializeField] private float leanSmooth = 8f;
+
         // Debuff ve Buff mekanikleri
         private float iceDebuffTimer = 0f;
         private Renderer visualRenderer;
         private Color originalVisualColor;
         private bool isIceVisualActive = false;
+
+        // Spin + lean state
+        private float spinAngle;
+        private Quaternion currentLean = Quaternion.identity;
+        private Quaternion visualBaseRot = Quaternion.identity;
 
         private void Awake()
         {
@@ -37,6 +47,7 @@ namespace SpinForward.Player
             rb = GetComponent<Rigidbody>();
             if (visual != null)
             {
+                visualBaseRot = visual.localRotation; // preserve the model's resting orientation
                 visualRenderer = visual.GetComponentInChildren<Renderer>();
                 if (visualRenderer != null)
                 {
@@ -81,8 +92,23 @@ namespace SpinForward.Player
                 spin *= 0.25f;
             }
 
+            // Accumulate the spin angle, then lean the whole spinner toward its
+            // travel direction (banking into movement) for a bit of life.
+            spinAngle += spin * Time.deltaTime;
+
+            Quaternion targetLean = Quaternion.identity;
+            Vector3 flatVel = rb.linearVelocity;
+            flatVel.y = 0f;
+            if (flatVel.sqrMagnitude > 0.02f)
+            {
+                Vector3 tiltAxis = Vector3.Cross(Vector3.up, flatVel.normalized);
+                float amount = Mathf.Clamp01(flatVel.magnitude / Mathf.Max(0.01f, moveSpeed)) * maxLeanAngle;
+                targetLean = Quaternion.AngleAxis(amount, tiltAxis);
+            }
+            currentLean = Quaternion.Slerp(currentLean, targetLean, Time.deltaTime * leanSmooth);
+
             if (visual != null)
-                visual.Rotate(0f, spin * Time.deltaTime, 0f, Space.World);
+                visual.localRotation = currentLean * Quaternion.AngleAxis(spinAngle, Vector3.up) * visualBaseRot;
         }
 
         private void FixedUpdate()

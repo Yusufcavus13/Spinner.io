@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace SpinForward.Economy
 {
-    public enum UpgradeKind { Rotate, Power, Income }
+    public enum UpgradeKind { Rotate, Power, Income, Energy }
     
     [System.Serializable]
     public class Upgrade

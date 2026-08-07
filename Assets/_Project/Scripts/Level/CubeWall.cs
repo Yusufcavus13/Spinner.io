@@ -26,8 +26,10 @@ namespace SpinForward.Level
         public event System.Action Cleared;
 
         public int Remaining => remaining;
+        public int TotalCubes => totalCubes;
 
         private int remaining;
+        private int totalCubes;
         
         // Dynamic Movement Variables
         private bool isMoving;
@@ -58,43 +60,123 @@ namespace SpinForward.Level
             }
 
             Clear();
-
             int spawnedBombs = 0; 
             
+            Texture2D sprite = data != null ? data.levelSprite : null;
+            Color[] pixels = null;
+            if (sprite != null)
+            {
+                columns = sprite.width;
+                rows = sprite.height;
+                try
+                {
+                    pixels = sprite.GetPixels();
+                }
+                catch (UnityException e)
+                {
+                    Debug.LogWarning("[CubeWall] Cannot read texture: " + sprite.name + ". Make sure 'Read/Write Enabled' is checked in import settings! " + e.Message);
+                    sprite = null;
+                }
+            }
+
             GridShape shape = data != null ? data.shape : GridShape.Square;
             alternateRowMovement = data != null ? data.alternateRowMovement : false;
+
+            // Distance Transform (Depth calculation for health)
+            int[,] distanceMap = new int[columns, rows];
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < columns; c++)
+                {
+                    bool isSolid = true;
+                    if (sprite != null && pixels != null)
+                        isSolid = pixels[r * columns + c].a >= 0.1f;
+                    
+                    if (isSolid)
+                    {
+                        // Kenarlardakiler 1 uzaklıktadır
+                        if (c == 0 || c == columns - 1 || r == 0 || r == rows - 1)
+                            distanceMap[c, r] = 1;
+                        else
+                            distanceMap[c, r] = 9999;
+                    }
+                    else
+                    {
+                        distanceMap[c, r] = 0; // Boşluk
+                    }
+                }
+            }
+
+            // Forward pass
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < columns; c++)
+                {
+                    if (distanceMap[c, r] > 1)
+                    {
+                        int min = distanceMap[c, r];
+                        if (c > 0) min = Mathf.Min(min, distanceMap[c - 1, r] + 1);
+                        if (r > 0) min = Mathf.Min(min, distanceMap[c, r - 1] + 1);
+                        distanceMap[c, r] = min;
+                    }
+                }
+            }
+            // Backward pass
+            for (int r = rows - 1; r >= 0; r--)
+            {
+                for (int c = columns - 1; c >= 0; c--)
+                {
+                    if (distanceMap[c, r] > 1)
+                    {
+                        int min = distanceMap[c, r];
+                        if (c < columns - 1) min = Mathf.Min(min, distanceMap[c + 1, r] + 1);
+                        if (r < rows - 1) min = Mathf.Min(min, distanceMap[c, r + 1] + 1);
+                        distanceMap[c, r] = min;
+                    }
+                }
+            }
 
             for (int r = 0; r < rows; r++)
             {
                 for (int c = 0; c < columns; c++)
                 {
-                    // Şekle göre filtreleme
                     bool shouldSpawn = true;
-                    if (shape == GridShape.Circle)
+                    Color pixelColor = Color.white;
+                    
+                    if (sprite != null && pixels != null)
                     {
-                        float centerCol = (columns - 1) / 2f;
-                        float centerRow = (rows - 1) / 2f;
-                        float radius = Mathf.Min(columns, rows) / 2f;
-                        float dist = Vector2.Distance(new Vector2(c, r), new Vector2(centerCol, centerRow));
-                        if (dist > radius) shouldSpawn = false;
+                        // Resimdeki pikselleri oku
+                        pixelColor = pixels[r * columns + c];
+                        if (pixelColor.a < 0.1f) shouldSpawn = false; // Şeffaf pikselleri atla
                     }
-                    else if (shape == GridShape.Triangle)
+                    else
                     {
-                        float centerCol = (columns - 1) / 2f;
-                        float widthAtRow = columns * (1f - (float)r / rows);
-                        if (Mathf.Abs(c - centerCol) > widthAtRow / 2f) shouldSpawn = false;
-                    }
-                    else if (shape == GridShape.Diamond)
-                    {
-                        float centerCol = (columns - 1) / 2f;
-                        float centerRow = (rows - 1) / 2f;
-                        float normX = Mathf.Abs(c - centerCol) / (columns / 2.2f);
-                        float normY = Mathf.Abs(r - centerRow) / (rows / 2.2f);
-                        if (normX + normY > 1f) shouldSpawn = false;
+                        // Eski şekle göre filtreleme
+                        if (shape == GridShape.Circle)
+                        {
+                            float centerCol = (columns - 1) / 2f;
+                            float centerRow = (rows - 1) / 2f;
+                            float radius = Mathf.Min(columns, rows) / 2f;
+                            float dist = Vector2.Distance(new Vector2(c, r), new Vector2(centerCol, centerRow));
+                            if (dist > radius) shouldSpawn = false;
+                        }
+                        else if (shape == GridShape.Triangle)
+                        {
+                            float centerCol = (columns - 1) / 2f;
+                            float widthAtRow = columns * (1f - (float)r / rows);
+                            if (Mathf.Abs(c - centerCol) > widthAtRow / 2f) shouldSpawn = false;
+                        }
+                        else if (shape == GridShape.Diamond)
+                        {
+                            float centerCol = (columns - 1) / 2f;
+                            float centerRow = (rows - 1) / 2f;
+                            float normX = Mathf.Abs(c - centerCol) / (columns / 2.2f);
+                            float normY = Mathf.Abs(r - centerRow) / (rows / 2.2f);
+                            if (normX + normY > 1f) shouldSpawn = false;
+                        }
                     }
                     
                     if (!shouldSpawn) continue;
-
                     
                     float x = (c - (columns - 1) / 2f) * spacing;
                     float z = r * spacing;
@@ -104,23 +186,22 @@ namespace SpinForward.Level
                     Cube cube = Instantiate(cubePrefab, pos, Quaternion.identity, transform);
                     
                     CubeType type = CubeType.Normal;
-                    int health = 1;
-                    
+                    int health = (data != null) ? data.cubeHealth : 1;
+
                     if (data != null)
                     {
-                        health = data.cubeHealth;
                         float rand = Random.value;
-                        
+
                         float tBomb = data.bombCubeChance;
                         float tSteel = tBomb + data.steelCubeChance;
                         float tIce = tSteel + data.iceCubeChance;
                         float tShield = tIce + data.shieldCubeChance;
                         float tSplit = tShield + data.splitCubeChance;
-                        
+
                         if (rand < tBomb && spawnedBombs < data.maxBombs)
                         {
                             type = CubeType.Bomb;
-                            health *= 3; 
+                            health *= 3;
                             spawnedBombs++;
                         }
                         else if (rand < tSteel) type = CubeType.Steel;
@@ -128,7 +209,13 @@ namespace SpinForward.Level
                         else if (rand < tShield) type = CubeType.Shield;
                         else if (rand < tSplit) type = CubeType.Split;
                     }
-                    
+
+                    // Inner cubes of a sprite image are tougher: the distance-transform
+                    // depth adds health, so you dig from the edges inward (boss's 96x96 idea).
+                    // Applied AFTER the base health so it isn't overwritten.
+                    if (sprite != null)
+                        health += (distanceMap[c, r] - 1) / 2;
+
                     cube.Init(type, health);
 
                     // Renk ataması
@@ -137,7 +224,12 @@ namespace SpinForward.Level
                     else if (type == CubeType.Steel)
                         cube.SetColor(Color.black);
                     else if (type == CubeType.Normal)
-                        cube.SetColor(ColorFor(c, r, columns, rows));
+                    {
+                        if (sprite != null)
+                            cube.SetColor(pixelColor);
+                        else
+                            cube.SetColor(ColorFor(c, r, columns, rows));
+                    }
 
                     if (type != CubeType.Steel)
                     {
@@ -148,6 +240,8 @@ namespace SpinForward.Level
                     activeCubes.Add(new CubeData { cube = cube, baseLocalPos = localPos, rowIndex = r });
                 }
             }
+            
+            totalCubes = remaining;
 
             // Spawn Vortex Hazards outside the grid
             if (data != null && data.vortexCount > 0)
@@ -275,6 +369,8 @@ namespace SpinForward.Level
             for (int i = transform.childCount - 1; i >= 0; i--)
                 Destroy(transform.GetChild(i).gameObject);
             remaining = 0;
+            totalCubes = 0;
+            activeCubes.Clear();
         }
 
         private void OnCubeSmashed(Cube cube)

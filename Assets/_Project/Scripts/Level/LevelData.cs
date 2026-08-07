@@ -8,7 +8,11 @@ namespace SpinForward.Level
     [CreateAssetMenu(fileName = "Level_", menuName = "Spin Forward/Level")]
     public class LevelData : ScriptableObject
     {
-        [Header("Grid Size & Shape")]
+        [Header("Pixel Art Data")]
+        [Tooltip("The 2D sprite to convert into 3D voxels. Must have Read/Write Enabled in Import Settings!")]
+        public Texture2D levelSprite;
+        
+        [Header("Grid Size & Shape (Fallback if no sprite)")]
         [Min(1)] public int columns = 5;
         [Min(1)] public int rows = 5;
         public GridShape shape = GridShape.Square;

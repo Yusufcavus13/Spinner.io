@@ -26,17 +26,23 @@ namespace SpinForward.Level
         [SerializeField] private GameObject losePanel;
         [SerializeField] private TMP_Text timerLabel;
         [SerializeField] private TMP_Text levelLabel;
+        [SerializeField] private TMP_Text progressLabel;
 
         [Header("Audio")]
         [SerializeField] private AudioClip winClip;
         [SerializeField] private AudioClip loseClip;
+
+        [Header("Events (For Camera & UI)")]
+        public UnityEngine.Events.UnityEvent onMenuState;
+        public UnityEngine.Events.UnityEvent onGameState;
 
         private const float DefaultDuration = 20f;
         private const int DefaultSize = 5;
 
         private State state;
         private int level = 1;
-        private float timeLeft;
+        private float currentEnergy;
+        private float maxEnergy;
         private Vector3 spinnerStart;
         private Rigidbody spinnerBody;
 
@@ -73,11 +79,11 @@ namespace SpinForward.Level
         {
             if (state == State.WaitingToStart)
             {
-                // Ekrana dokunulduğunda oyunu başlat
                 if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
                 {
                     state = State.Playing;
                     if (tapToPlayPanel != null) tapToPlayPanel.SetActive(false);
+                    onGameState?.Invoke();
                 }
                 return;
             }
@@ -85,12 +91,31 @@ namespace SpinForward.Level
             if (state != State.Playing)
                 return;
 
-            timeLeft -= Time.deltaTime;
-            if (timerLabel != null)
-                timerLabel.text = Mathf.CeilToInt(Mathf.Max(0f, timeLeft)).ToString();
+            // Enerji Tüketimi (Hareket ederken daha hızlı tükenebilir ama şimdilik sabit)
+            float energyDrainRate = 5f; // Saniyede 5 birim
+            if (spinnerBody != null && spinnerBody.linearVelocity.magnitude > 0.5f)
+            {
+                energyDrainRate = 10f; // Hareket ederken daha hızlı tükenir
+            }
 
-            if (timeLeft <= 0f)
-                Lose();
+            currentEnergy -= energyDrainRate * Time.deltaTime;
+            
+            if (timerLabel != null)
+            {
+                // UI'ı Enerji Barı gibi güncelliyoruz, ileride gerçek Image fill amount kullanılabilir
+                timerLabel.text = "Energy: " + Mathf.CeilToInt(Mathf.Max(0f, currentEnergy)).ToString();
+            }
+
+            if (currentEnergy <= 0f)
+                Lose(); // Enerji bittiğinde tur biter
+                
+            // Update Progress
+            if (progressLabel != null && wall != null && wall.TotalCubes > 0)
+            {
+                int destroyed = wall.TotalCubes - wall.Remaining;
+                float pct = (float)destroyed / wall.TotalCubes;
+                progressLabel.text = $"% {Mathf.FloorToInt(pct * 100f)}";
+            }
         }
 
         private void StartLevel(bool autoStart = false)
@@ -101,16 +126,27 @@ namespace SpinForward.Level
             if (tapToPlayPanel != null) tapToPlayPanel.SetActive(!autoStart);
             if (winPanel != null) winPanel.SetActive(false);
             if (losePanel != null) losePanel.SetActive(false);
+            
+            if (!autoStart)
+                onMenuState?.Invoke();
+            else
+                onGameState?.Invoke();
 
-            MoneyOrb.ClearAll(); // drop any coins still flying from the previous attempt
+            MoneyOrb.ClearAll(); 
             ResetSpinner();
 
             LevelData data = GetLevelData();
-            timeLeft = data != null ? data.attemptDuration : DefaultDuration;
+            
+            // Maksimum Enerjiyi UpgradeSystem'den al
+            if (UpgradeSystem.Instance != null)
+                maxEnergy = UpgradeSystem.Instance.Energy.Value;
+            else
+                maxEnergy = 100f; // Fallback
+                
+            currentEnergy = maxEnergy;
 
-            // Süreyi daha oyun başlamadan ekranda göster
             if (timerLabel != null)
-                timerLabel.text = Mathf.CeilToInt(Mathf.Max(0f, timeLeft)).ToString();
+                timerLabel.text = "Energy: " + Mathf.CeilToInt(Mathf.Max(0f, currentEnergy)).ToString();
 
             if (levelLabel != null)
                 levelLabel.text = "Level " + level;

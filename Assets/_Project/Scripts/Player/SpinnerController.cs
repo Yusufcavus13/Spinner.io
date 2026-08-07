@@ -102,8 +102,7 @@ namespace SpinForward.Player
             if (flatVel.sqrMagnitude > 0.02f)
             {
                 Vector3 tiltAxis = Vector3.Cross(Vector3.up, flatVel.normalized);
-                // Reach full lean at just 40% of top speed so it's clearly visible.
-                float amount = Mathf.Clamp01(flatVel.magnitude / Mathf.Max(0.01f, moveSpeed * 0.4f)) * maxLeanAngle;
+                float amount = Mathf.Clamp01(flatVel.magnitude / Mathf.Max(0.01f, moveSpeed * 0.6f)) * maxLeanAngle;
                 targetLean = Quaternion.AngleAxis(amount, tiltAxis);
             }
             currentLean = Quaternion.Slerp(currentLean, targetLean, Time.deltaTime * leanSmooth);

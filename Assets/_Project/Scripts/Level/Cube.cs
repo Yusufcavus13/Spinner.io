@@ -6,7 +6,6 @@ namespace SpinForward.Level
 {
     public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Split }
 
-    [RequireComponent(typeof(Rigidbody))]
     public class Cube : MonoBehaviour
     {
         [Tooltip("Tag the spinner must have for a hit to count.")]
@@ -37,9 +36,23 @@ namespace SpinForward.Level
 
         private void Awake()
         {
+            // Frozen cubes are cheap STATIC colliders - no Rigidbody. One is only
+            // added when the cube must slide (moving walls) or fly (on shatter).
+            // This is what makes big voxel images affordable on mobile.
             rb = GetComponent<Rigidbody>();
-            rb.isKinematic = true; // frozen in place until hit
+            if (rb != null)
+                rb.isKinematic = true; // if the prefab still ships one, keep it frozen
             rend = GetComponent<Renderer>();
+        }
+
+        /// <summary>Gives the cube a kinematic Rigidbody so a moving/breathing wall can
+        /// slide it cheaply (dragging a static collider by transform is expensive).</summary>
+        public void MakeMovable()
+        {
+            if (rb == null)
+                rb = gameObject.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
         }
 
         public void Init(CubeType type, int health)
@@ -67,10 +80,12 @@ namespace SpinForward.Level
         
         public void MoveTo(Vector3 targetPos)
         {
-            if (!isSmashed && rb.isKinematic)
-            {
+            if (isSmashed)
+                return;
+            if (rb != null && rb.isKinematic)
                 rb.MovePosition(targetPos);
-            }
+            else
+                transform.position = targetPos; // fallback (static cube, shouldn't happen)
         }
 
         public void SetColor(Color color)
@@ -172,9 +187,14 @@ namespace SpinForward.Level
         private void Shatter(Vector3 hitFrom)
         {
             isSmashed = true;
+
+            // Frozen cubes carry no Rigidbody; add one now so the debris can fly.
+            if (rb == null)
+                rb = gameObject.AddComponent<Rigidbody>();
             rb.isKinematic = false;
-            
-            if(TryGetComponent<Collider>(out Collider collider))
+            rb.useGravity = true;
+
+            if (TryGetComponent<Collider>(out Collider collider))
             {
                 collider.enabled = false;
             }

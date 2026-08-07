@@ -233,6 +233,11 @@ namespace SpinForward.Level
 
                     cube.Init(type, health);
 
+                    // Moving/breathing walls need a kinematic Rigidbody to slide cheaply;
+                    // static walls stay as plain colliders (no Rigidbody) for performance.
+                    if (data != null && (data.isMoving || data.isBreathing))
+                        cube.MakeMovable();
+
                     // Renk ataması
                     if (type == CubeType.Bomb)
                         cube.SetColor(Color.red);

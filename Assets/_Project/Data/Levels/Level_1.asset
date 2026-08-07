@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c43a1e6ddb1d44173a8c2c0810be4042, type: 3}
   m_Name: Level_1
   m_EditorClassIdentifier: Assembly-CSharp::SpinForward.Level.LevelData
+  levelSprite: {fileID: 2800000, guid: f0a44262e030b4d61b565b840bfca22e, type: 3}
+  maxResolution: 45
+  colorSteps: 6
   columns: 5
   rows: 5
   shape: 1

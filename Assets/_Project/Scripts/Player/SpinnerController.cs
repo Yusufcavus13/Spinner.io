@@ -26,9 +26,9 @@ namespace SpinForward.Player
         private Rigidbody rb;
         
         [Header("Lean (tilt toward movement)")]
-        [Tooltip("Max degrees the spinner tilts into its travel direction.")]
-        [SerializeField] private float maxLeanAngle = 18f;
-        [SerializeField] private float leanSmooth = 8f;
+        [Tooltip("Max degrees the spinner tilts into its travel direction. ~8 reads as a gentle bank; big values look like wobbling in place.")]
+        [SerializeField] private float maxLeanAngle = 8f;
+        [SerializeField] private float leanSmooth = 6f;
 
         // Debuff ve Buff mekanikleri
         private float iceDebuffTimer = 0f;

@@ -76,7 +76,7 @@ namespace SpinForward.Player
                 }
             }
             
-            float spin = 0f;
+            float spin = spinSpeed; // fallback so it always spins
             if (UpgradeSystem.Instance != null)
                 spin = UpgradeSystem.Instance.Rotate.Value;
                 

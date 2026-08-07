@@ -3,42 +3,51 @@ using UnityEngine;
 namespace SpinForward.Player
 {
     /// <summary>
-    /// Builds a clean fidget-spinner look from primitives - no downloads, no ugly
-    /// imported models. Put it on the spinning "visual" object; its parts spin (and
-    /// now lean) with it. Right-click the component header > Rebuild to preview in
-    /// the editor. Colliders are stripped so it stays purely visual.
+    /// Builds a chunky, 3D fidget-spinner from primitives - no downloads. A tall
+    /// central spindle makes the lean visible, sphere bearings give it volume, and
+    /// one brightly colored "nose" bearing makes the spin unmistakable. Put it on
+    /// the spinning "visual" object. Right-click the header > Rebuild to preview.
     /// </summary>
     public class ProceduralSpinner : MonoBehaviour
     {
         [Header("Shape")]
         [Range(2, 6)] [SerializeField] private int arms = 3;
-        [SerializeField] private float armRadius = 0.6f;
-        [SerializeField] private float bearingSize = 0.35f;
-        [SerializeField] private float hubSize = 0.35f;
-        [SerializeField] private float thickness = 0.18f;
+        [SerializeField] private float armRadius = 0.55f;
+        [SerializeField] private float bearingSize = 0.4f;
+        [SerializeField] private float hubSize = 0.4f;
+        [SerializeField] private float armThickness = 0.22f;
+        [Tooltip("Height of the vertical spindle. Taller = lean is more visible.")]
+        [SerializeField] private float spindleHeight = 0.8f;
 
         [Header("Colors")]
-        [SerializeField] private Color bodyColor = new Color(0.14f, 0.45f, 1f);
-        [SerializeField] private Color accentColor = new Color(1f, 0.85f, 0.2f);
+        [SerializeField] private Color bodyColor = new Color(0.13f, 0.4f, 1f);
+        [SerializeField] private Color accentColor = new Color(0.2f, 0.95f, 1f);
+        [Tooltip("The one bright bearing that makes spinning obvious.")]
+        [SerializeField] private Color noseColor = new Color(1f, 0.4f, 0.05f);
         [Range(0f, 1f)] [SerializeField] private float metallic = 0.8f;
         [Range(0f, 1f)] [SerializeField] private float smoothness = 0.75f;
-        [SerializeField] private float emission = 2f;
+        [SerializeField] private float emission = 2.5f;
 
         private void Awake() => Build();
 
         [ContextMenu("Rebuild")]
         public void Build()
         {
-            // Clear any previous parts (editor preview or old build).
             for (int i = transform.childCount - 1; i >= 0; i--)
                 DestroySafe(transform.GetChild(i).gameObject);
 
             Material body = MakeMaterial(bodyColor, false);
             Material accent = MakeMaterial(accentColor, true);
+            Material nose = MakeMaterial(noseColor, true);
 
-            // Center hub + glowing cap.
-            CreatePart(PrimitiveType.Cylinder, Vector3.zero, new Vector3(hubSize, thickness, hubSize), body, "Hub");
-            CreatePart(PrimitiveType.Cylinder, Vector3.up * thickness * 0.6f, new Vector3(hubSize * 0.55f, thickness, hubSize * 0.55f), accent, "HubCap");
+            // Center hub.
+            CreatePart(PrimitiveType.Cylinder, Vector3.zero, new Vector3(hubSize, armThickness, hubSize), body, "Hub");
+
+            // Vertical spindle + glowing top knob - this is what makes the LEAN readable.
+            CreatePart(PrimitiveType.Cylinder, Vector3.up * spindleHeight * 0.5f,
+                new Vector3(hubSize * 0.35f, spindleHeight * 0.5f, hubSize * 0.35f), accent, "Spindle");
+            CreatePart(PrimitiveType.Sphere, Vector3.up * spindleHeight,
+                Vector3.one * hubSize * 0.6f, accent, "SpindleTop");
 
             for (int i = 0; i < arms; i++)
             {
@@ -46,14 +55,14 @@ namespace SpinForward.Player
                 Vector3 dir = new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang));
                 Vector3 bearingPos = dir * armRadius;
 
-                // Arm: a bar reaching from the hub out to the bearing.
+                // Arm bar reaching out to the bearing.
                 GameObject arm = CreatePart(PrimitiveType.Cube, dir * armRadius * 0.5f,
-                    new Vector3(armRadius, thickness * 0.7f, bearingSize * 0.5f), body, "Arm");
+                    new Vector3(armRadius, armThickness, bearingSize * 0.5f), body, "Arm");
                 arm.transform.localRotation = Quaternion.FromToRotation(Vector3.right, dir);
 
-                // Outer bearing ring + glowing cap.
-                CreatePart(PrimitiveType.Cylinder, bearingPos, new Vector3(bearingSize, thickness, bearingSize), body, "Bearing");
-                CreatePart(PrimitiveType.Cylinder, bearingPos + Vector3.up * thickness * 0.6f, new Vector3(bearingSize * 0.5f, thickness, bearingSize * 0.5f), accent, "BearingCap");
+                // Outer bearing as a sphere (3D volume). The first one is the bright nose.
+                Material bearingMat = (i == 0) ? nose : body;
+                CreatePart(PrimitiveType.Sphere, bearingPos, Vector3.one * bearingSize, bearingMat, "Bearing");
             }
         }
 

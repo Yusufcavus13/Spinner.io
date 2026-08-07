@@ -12,12 +12,12 @@ namespace SpinForward.Player
     {
         [Header("Shape")]
         [Range(2, 6)] [SerializeField] private int arms = 3;
-        [SerializeField] private float armRadius = 0.55f;
-        [SerializeField] private float bearingSize = 0.4f;
-        [SerializeField] private float hubSize = 0.4f;
-        [SerializeField] private float armThickness = 0.22f;
+        [SerializeField] private float armRadius = 0.8f;
+        [SerializeField] private float bearingSize = 0.55f;
+        [SerializeField] private float hubSize = 0.55f;
+        [SerializeField] private float armThickness = 0.32f;
         [Tooltip("Height of the vertical spindle. Taller = lean is more visible.")]
-        [SerializeField] private float spindleHeight = 0.8f;
+        [SerializeField] private float spindleHeight = 1.6f;
 
         [Header("Colors")]
         [SerializeField] private Color bodyColor = new Color(0.13f, 0.4f, 1f);

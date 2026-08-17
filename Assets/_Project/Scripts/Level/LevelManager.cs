@@ -93,6 +93,8 @@ namespace SpinForward.Level
             if (wall != null)
                 wall.Cleared += OnWallCleared;
             Cube.AnyCubeSmashed += OnAnyCubeSmashed;
+            if (UpgradeSystem.Instance != null)
+                UpgradeSystem.Instance.Energy.Changed += OnEnergyUpgraded;
             StartLevel();
         }
 
@@ -178,6 +180,21 @@ namespace SpinForward.Level
             if (wall != null)
                 wall.Cleared -= OnWallCleared;
             Cube.AnyCubeSmashed -= OnAnyCubeSmashed;
+            if (UpgradeSystem.Instance != null)
+                UpgradeSystem.Instance.Energy.Changed -= OnEnergyUpgraded;
+        }
+
+        // Buying the Energy upgrade raises max energy - top up current energy by the gained
+        // amount so the right-side bar visibly jumps up the moment you press the button.
+        private void OnEnergyUpgraded()
+        {
+            if (UpgradeSystem.Instance == null)
+                return;
+            float newMax = UpgradeSystem.Instance.Energy.Value;
+            float added = newMax - maxEnergy;
+            maxEnergy = newMax;
+            if (added > 0f)
+                currentEnergy = Mathf.Min(maxEnergy, currentEnergy + added);
         }
 
         // Smashing cubes refunds energy, so actively clearing keeps you alive.

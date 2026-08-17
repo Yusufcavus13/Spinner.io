@@ -45,6 +45,10 @@ namespace SpinForward.Level
         private int level = 1;
         [Tooltip("Energy refunded per cube smashed. Lets an active player sustain and finish a level.")]
         [SerializeField] private float energyPerCube = 0.6f;
+        [Tooltip("Cap on refund energy PER SECOND. Keep it below the drain so fast clearing can't out-pace it - energy always trends down.")]
+        [SerializeField] private float maxRefundPerSecond = 2f;
+        private float refundThisSecond;
+        private float refundTimer;
 
         private float currentEnergy;
         private float maxEnergy;
@@ -182,11 +186,13 @@ namespace SpinForward.Level
             if (state != State.Playing)
                 return;
 
-            // Diminishing refund: nearly full when energy is LOW (lets you recover), but
-            // tiny when energy is already HIGH - so plowing can't keep it maxed out. Energy
-            // ends up hovering low-mid, which keeps real time pressure on the level.
-            float fill = maxEnergy > 0f ? currentEnergy / maxEnergy : 0f;
-            float refund = energyPerCube * Mathf.Clamp01(1f - fill * 0.8f);
+            // Refund is capped PER SECOND, so no matter how many cubes you smash the
+            // refund can't out-pace the drain - energy always trends down, but clearing
+            // buys you time. Dawdling drains at the full rate.
+            if (refundThisSecond >= maxRefundPerSecond)
+                return;
+            float refund = Mathf.Min(energyPerCube, maxRefundPerSecond - refundThisSecond);
+            refundThisSecond += refund;
             currentEnergy = Mathf.Min(maxEnergy, currentEnergy + refund);
         }
 
@@ -216,6 +222,14 @@ namespace SpinForward.Level
             }
 
             currentEnergy -= energyDrainRate * Time.deltaTime;
+
+            // Refill the per-second refund cap window.
+            refundTimer -= Time.deltaTime;
+            if (refundTimer <= 0f)
+            {
+                refundTimer = 1f;
+                refundThisSecond = 0f;
+            }
             
             if (timerLabel != null)
             {

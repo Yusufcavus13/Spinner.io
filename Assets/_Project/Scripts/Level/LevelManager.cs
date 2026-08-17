@@ -181,7 +181,13 @@ namespace SpinForward.Level
         {
             if (state != State.Playing)
                 return;
-            currentEnergy = Mathf.Min(maxEnergy, currentEnergy + energyPerCube);
+
+            // Diminishing refund: nearly full when energy is LOW (lets you recover), but
+            // tiny when energy is already HIGH - so plowing can't keep it maxed out. Energy
+            // ends up hovering low-mid, which keeps real time pressure on the level.
+            float fill = maxEnergy > 0f ? currentEnergy / maxEnergy : 0f;
+            float refund = energyPerCube * Mathf.Clamp01(1f - fill * 0.8f);
+            currentEnergy = Mathf.Min(maxEnergy, currentEnergy + refund);
         }
 
         private void Update()

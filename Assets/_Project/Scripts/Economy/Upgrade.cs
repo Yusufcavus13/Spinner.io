@@ -47,5 +47,14 @@ namespace SpinForward.Economy
             Changed?.Invoke();
             return true;
         }
+
+        // Drops the level (e.g. as a retry penalty); also brings the Cost back down.
+        public void ReduceLevel(int amount)
+        {
+            if (amount <= 0)
+                return;
+            level = Mathf.Max(0, level - amount);
+            Changed?.Invoke();
+        }
     }
 }

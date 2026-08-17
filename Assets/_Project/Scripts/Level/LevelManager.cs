@@ -50,6 +50,12 @@ namespace SpinForward.Level
         private float refundThisSecond;
         private float refundTimer;
 
+        [Header("Retry Penalty")]
+        [Tooltip("Fraction of money lost when you fail and retry.")]
+        [Range(0f, 1f)] [SerializeField] private float retryMoneyPenalty = 0.3f;
+        [Tooltip("Fraction of each upgrade's level dropped on retry (also lowers its cost).")]
+        [Range(0f, 1f)] [SerializeField] private float retryUpgradePenalty = 0.3f;
+
         private float currentEnergy;
         private float maxEnergy;
 
@@ -357,6 +363,54 @@ namespace SpinForward.Level
             Time.timeScale = 0f; // freeze the action behind the panel
             if (winPanel != null) winPanel.SetActive(true);
             if (Sfx.Instance != null) Sfx.Instance.Play(winClip, 0.7f, 0f);
+            PlayConfetti();
+        }
+
+        // Colorful confetti burst on level complete. Uses unscaled time so it animates
+        // even though the game is frozen behind the win panel.
+        private void PlayConfetti()
+        {
+            Vector3 pos = (spinner != null ? spinner.position : Vector3.zero) + Vector3.up * 8f;
+            var go = new GameObject("WinConfetti");
+            go.transform.position = pos;
+
+            ParticleSystem ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = ps.main;
+            main.loop = false;
+            main.duration = 1.5f;
+            main.startLifetime = 3.5f;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(2f, 7f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.15f, 0.35f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, 6.28f);
+            main.gravityModifier = 1.1f;
+            main.maxParticles = 300;
+            main.useUnscaledTime = true;
+
+            var gradient = new Gradient();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(new Color(1f, 0.25f, 0.35f), 0f),
+                    new GradientColorKey(new Color(1f, 0.85f, 0.2f), 0.33f),
+                    new GradientColorKey(new Color(0.3f, 1f, 0.45f), 0.66f),
+                    new GradientColorKey(new Color(0.3f, 0.7f, 1f), 1f)
+                },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+            main.startColor = new ParticleSystem.MinMaxGradient(gradient) { mode = ParticleSystemGradientMode.RandomColor };
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 220) });
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(12f, 0.5f, 12f);
+
+            ps.GetComponent<ParticleSystemRenderer>().material = new Material(Shader.Find("Sprites/Default"));
+            ps.Play();
+            Destroy(go, 6f);
         }
 
         private void Lose()
@@ -378,7 +432,23 @@ namespace SpinForward.Level
 
         public void Retry()
         {
+            ApplyRetryPenalty();
             StartLevel(true); // Tekrar denendiğinde de direkt başla
+        }
+
+        // Failing costs you: lose some money and drop upgrade levels (which also brings
+        // their costs back down so re-buying after a fail stays affordable).
+        private void ApplyRetryPenalty()
+        {
+            if (Wallet.Instance != null && retryMoneyPenalty > 0f)
+            {
+                int penalty = Mathf.RoundToInt(Wallet.Instance.Balance * retryMoneyPenalty);
+                if (penalty > 0)
+                    Wallet.Instance.Add(-penalty);
+            }
+
+            if (UpgradeSystem.Instance != null && retryUpgradePenalty > 0f)
+                UpgradeSystem.Instance.ApplyRetryPenalty(retryUpgradePenalty);
         }
     }
 }

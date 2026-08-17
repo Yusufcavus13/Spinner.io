@@ -56,6 +56,21 @@ namespace SpinForward.Economy
             return Get(kind).TryPurchase(wallet);
         }
 
+        // Retry penalty: drop every upgrade by a fraction of its level (which also brings
+        // its cost back down, so re-buying after a fail stays affordable).
+        public void ApplyRetryPenalty(float levelFraction)
+        {
+            Drop(rotate, levelFraction);
+            Drop(power, levelFraction);
+            Drop(income, levelFraction);
+            Drop(energy, levelFraction);
+        }
+
+        private static void Drop(Upgrade u, float fraction)
+        {
+            u.ReduceLevel(Mathf.CeilToInt(u.Level * fraction));
+        }
+
         private void Reset()
         {
             rotate = new Upgrade("Rotate", 720f, 180f, 10, 1.6f);

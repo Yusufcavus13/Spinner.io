@@ -26,8 +26,15 @@ namespace SpinForward.Player
         [Tooltip("Color of the trail when rotate speed is high")]
         [SerializeField] private Color highSpeedColor = Color.cyan;
         
+        [Header("Skin Evolution (Afilli Modeller)")]
+        [Tooltip("Farklı seviyelerdeki Spinner modelleri (Hiyerarşide alt obje olmalılar)")]
+        [SerializeField] private GameObject[] skinModels;
+        [Tooltip("Modellerin açılması için gereken Power seviyeleri (Örn: 1, 10, 20)")]
+        [SerializeField] private int[] skinUnlockLevels;
+
         private Vector3 initialScale;
         private Color initialTrailColor;
+        private int currentSkinIndex = -1;
         
         private void Start()
         {
@@ -46,6 +53,33 @@ namespace SpinForward.Player
             
             UpdateScale(powerLevel);
             UpdateTrail(powerLevel, rotateLevel);
+            UpdateSkin((int)powerLevel);
+        }
+        
+        private void UpdateSkin(int powerLevel)
+        {
+            if (skinModels == null || skinModels.Length == 0 || skinUnlockLevels == null || skinUnlockLevels.Length != skinModels.Length) return;
+
+            int targetSkinIndex = 0;
+            for (int i = 0; i < skinUnlockLevels.Length; i++)
+            {
+                if (powerLevel >= skinUnlockLevels[i])
+                {
+                    targetSkinIndex = i;
+                }
+            }
+
+            if (currentSkinIndex != targetSkinIndex)
+            {
+                currentSkinIndex = targetSkinIndex;
+                for (int i = 0; i < skinModels.Length; i++)
+                {
+                    if (skinModels[i] != null)
+                    {
+                        skinModels[i].SetActive(i == currentSkinIndex);
+                    }
+                }
+            }
         }
         
         private void UpdateScale(float powerLevel)
@@ -57,6 +91,12 @@ namespace SpinForward.Player
             if (SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive)
             {
                 scaleMultiplier *= 1.5f; // Fever modunda %50 daha büyük!
+            }
+            
+            // Frenzy mode hafif büyüme
+            if (SpinnerController.Instance != null && SpinnerController.Instance.IsFrenzyActive)
+            {
+                scaleMultiplier *= 1.25f;
             }
             
             Vector3 targetScale = initialScale * scaleMultiplier;

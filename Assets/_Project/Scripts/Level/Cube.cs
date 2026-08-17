@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Split }
+    public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Split, Frenzy, Laser, Gold }
 
     public class Cube : MonoBehaviour
     {
@@ -18,6 +18,8 @@ namespace SpinForward.Level
         [Header("Bomb Settings")]
         [SerializeField] private float explosionRadius = 3f;
         [SerializeField] private int explosionDamage = 5;
+        [Tooltip("Physical blast force applied to loose debris when a bomb explodes.")]
+        [SerializeField] private float explosionForce = 12f;
 
         public event System.Action<Cube> Smashed;
         public static event System.Action<Vector3> AnyCubeSmashed;
@@ -36,17 +38,12 @@ namespace SpinForward.Level
 
         private void Awake()
         {
-            // Frozen cubes are cheap STATIC colliders - no Rigidbody. One is only
-            // added when the cube must slide (moving walls) or fly (on shatter).
-            // This is what makes big voxel images affordable on mobile.
             rb = GetComponent<Rigidbody>();
             if (rb != null)
-                rb.isKinematic = true; // if the prefab still ships one, keep it frozen
+                rb.isKinematic = true; 
             rend = GetComponent<Renderer>();
         }
 
-        /// <summary>Gives the cube a kinematic Rigidbody so a moving/breathing wall can
-        /// slide it cheaply (dragging a static collider by transform is expensive).</summary>
         public void MakeMovable()
         {
             if (rb == null)
@@ -58,14 +55,14 @@ namespace SpinForward.Level
         public void Init(CubeType type, int health)
         {
             myType = type;
-            transform.localScale = Vector3.one; // Reset scale
+            transform.localScale = Vector3.one; 
             
             if (type == CubeType.Steel)
-                currentHealth = 9999; 
+                currentHealth = 8; // sert ama kırılabilir (eskiden 9999 = kırılamazdı)
             else if (type == CubeType.Shield)
             {
                 currentHealth = health + 1; 
-                transform.localScale = Vector3.one * 1.15f; // Shield cubes are slightly larger
+                transform.localScale = Vector3.one * 1.15f; 
             }
             else
                 currentHealth = health;
@@ -76,6 +73,8 @@ namespace SpinForward.Level
                 SetColor(Color.grey); 
             else if (myType == CubeType.Split)
                 SetColor(new Color(1f, 0.5f, 0f)); 
+            else if (myType == CubeType.Frenzy)
+                SetColor(Color.yellow); // Frenzy = Golden/Yellow
         }
         
         public void MoveTo(Vector3 targetPos)
@@ -85,7 +84,7 @@ namespace SpinForward.Level
             if (rb != null && rb.isKinematic)
                 rb.MovePosition(targetPos);
             else
-                transform.position = targetPos; // fallback (static cube, shouldn't happen)
+                transform.position = targetPos; 
         }
 
         public void SetColor(Color color)
@@ -104,27 +103,64 @@ namespace SpinForward.Level
             rend.sharedMaterial = mat;
         }
 
+        private float lastDamageTime = 0f;
+
         private void OnCollisionEnter(Collision collision)
+        {
+            HandleCollision(collision);
+        }
+
+        private void OnCollisionStay(Collision collision)
+        {
+            if (Time.time - lastDamageTime >= 0.1f)
+            {
+                HandleCollision(collision);
+            }
+        }
+
+        private void HandleCollision(Collision collision)
         {
             if (isSmashed)
                 return;
                 
-            // Sadece Spinner vurabilir (Zincirleme patlamalar TakeDamage üzerinden yürüyecek)
+            // Sadece Spinner (veya klonları) vurabilir. Para orbu / parça / zemin geçmez.
             if (!collision.collider.CompareTag(spinnerTag))
                 return;
 
-            // Power upgrade allows doing more damage per hit
+            lastDamageTime = Time.time;
+
+            // Tough cubes just WOBBLE on hit - no push-back (that shoved the spinner around).
+            if (currentHealth > 4)
+            {
+                transform.localScale = Vector3.one * 0.9f;
+                Invoke(nameof(ResetScale), 0.1f);
+            }
+
             int damage = 1;
             if (UpgradeSystem.Instance != null)
                 damage = Mathf.CeilToInt(UpgradeSystem.Instance.Power.Value);
+
+            // Equipped shop skin adds flat bonus damage.
+            if (SpinForward.Economy.SkinManager.Instance != null)
+                damage += SpinForward.Economy.SkinManager.Instance.CurrentBonusDamage;
                 
-            // Fever Modundayken TEK ATAR!
             if (SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive)
             {
-                damage = 99999; // Çelik küplerin bile canı yetmez!
+                damage = 99999; 
+            }
+            
+            // Frenzy Buff bonus
+            if (SpinForward.Player.SpinnerController.Instance != null && SpinForward.Player.SpinnerController.Instance.IsFrenzyActive)
+            {
+                damage *= 3; // Frenzy aktifse x3 hasar!
             }
                 
             TakeDamage(damage, collision.transform.position);
+        }
+
+        private void ResetScale()
+        {
+            if (!isSmashed) transform.localScale = (myType == CubeType.Shield) ? Vector3.one * 1.15f : Vector3.one;
         }
 
         public void TakeDamage(int amount, Vector3 hitPoint)
@@ -132,10 +168,7 @@ namespace SpinForward.Level
             bool isFever = SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive;
             
             if (isSmashed) return;
-            
-            // Çelik küpler normalde kırılmaz, ama Fever Modu aktifse acımaz!
-            if (myType == CubeType.Steel && !isFever) return;
-            
+
             // Kalkanlı Küp (Shield) Mekaniği: Fever modunda değilsek, kalkan bütün hasarı emmeli!
             if (myType == CubeType.Shield && currentHealth > 1 && !isFever)
             {
@@ -152,8 +185,8 @@ namespace SpinForward.Level
 
             currentHealth -= amount;
 
-            // Ekrana hasar miktarını yazdır
-            if (SpinForward.UI.FloatingTextManager.Instance != null)
+            // Ekrana hasar miktarını yazdır (Fever modunda 9999 yazmasın diye gizledik!)
+            if (!isFever && SpinForward.UI.FloatingTextManager.Instance != null)
             {
                 SpinForward.UI.FloatingTextManager.Instance.ShowDamage(amount, transform.position);
             }
@@ -168,11 +201,59 @@ namespace SpinForward.Level
                 {
                     Explode();
                 }
+                else if (myType == CubeType.Laser)
+                {
+                    FireLaser();
+                }
+                else if (myType == CubeType.Gold)
+                {
+                    // Altın küp, mevcut income'un 15 katını verir.
+                    float incomeVal = SpinForward.Economy.UpgradeSystem.Instance != null ? SpinForward.Economy.UpgradeSystem.Instance.Income.Value : 2f;
+                    int bonusGold = Mathf.Max(10, Mathf.RoundToInt(incomeVal * 15f));
+                    if (SpinForward.Economy.Wallet.Instance != null)
+                        SpinForward.Economy.Wallet.Instance.Add(bonusGold);
+                        
+                    if (SpinForward.UI.FloatingTextManager.Instance != null)
+                        SpinForward.UI.FloatingTextManager.Instance.ShowDamage(bonusGold, transform.position + Vector3.up); // Yazı azıcık yukarıda çıksın
+                }
+            }
+        }
+
+        private void FireLaser()
+        {
+            if (SpinForward.CameraControl.CameraController.Instance != null)
+                SpinForward.CameraControl.CameraController.Instance.HeavyShake(1f);
+                
+            // Haç şeklinde (Yatay ve Dikey) BoxCast/OverlapBox kullanarak sıradaki her şeyi sil!
+            Vector3 extentsH = new Vector3(30f, 1f, 0.5f);
+            Vector3 extentsV = new Vector3(0.5f, 1f, 30f);
+
+            Collider[] hitsH = Physics.OverlapBox(transform.position, extentsH, Quaternion.identity);
+            foreach (var h in hitsH)
+            {
+                if (h.TryGetComponent(out Cube c) && c != this && !c.isSmashed)
+                {
+                    c.TakeDamage(999, transform.position); // Lazer anında yok eder
+                }
+            }
+
+            Collider[] hitsV = Physics.OverlapBox(transform.position, extentsV, Quaternion.identity);
+            foreach (var h in hitsV)
+            {
+                if (h.TryGetComponent(out Cube c) && c != this && !c.isSmashed)
+                {
+                    c.TakeDamage(999, transform.position);
+                }
             }
         }
 
         private void Explode()
         {
+            if (SpinForward.CameraControl.CameraController.Instance != null)
+            {
+                SpinForward.CameraControl.CameraController.Instance.HeavyShake(2f);
+            }
+            
             Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius);
             foreach (Collider c in colliders)
             {
@@ -182,23 +263,59 @@ namespace SpinForward.Level
                     neighborCube.TakeDamage(explosionDamage, transform.position);
                 }
             }
+
+            // Physical shockwave: shove any loose debris (now dynamic) outward.
+            foreach (Collider c in colliders)
+            {
+                Rigidbody body = c.attachedRigidbody;
+                if (body != null && !body.isKinematic)
+                    body.AddExplosionForce(explosionForce, transform.position, explosionRadius, 0.5f, ForceMode.Impulse);
+            }
         }
 
         private void Shatter(Vector3 hitFrom)
         {
             isSmashed = true;
 
+            // Efekt (Particle) oluştur
+            GameObject psObj = new GameObject("CubeShatterEffect");
+            psObj.transform.position = transform.position;
+            ParticleSystem ps = psObj.AddComponent<ParticleSystem>();
+            
+            // Ayarlar yapılırken oynatılmasını durdur
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = ps.main;
+            main.duration = 1f;
+            main.startLifetime = 1f;
+            main.startSpeed = 8f;
+            main.startSize = 0.4f;
+            main.startColor = (rend != null) ? rend.sharedMaterial.color : Color.white;
+            var emission = ps.emission;
+            emission.rateOverTime = 0;
+            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 10, 15) });
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.material = new Material(Shader.Find("Sprites/Default"));
+            ps.Play();
+            Destroy(psObj, 2f);
+
             // Frozen cubes carry no Rigidbody; add one now so the debris can fly.
             if (rb == null)
                 rb = gameObject.AddComponent<Rigidbody>();
             rb.isKinematic = false;
             rb.useGravity = true;
-
-            if (TryGetComponent<Collider>(out Collider collider))
+            // Collider stays ENABLED so the debris physically bounces off the ground
+            // and other chunks (and gets shoved by bomb blasts) instead of phasing through.
+            // But it must NOT shove the spinner, or clearing would fight the player.
+            if (SpinForward.Player.SpinnerController.Instance != null && TryGetComponent(out Collider myCol))
             {
-                collider.enabled = false;
+                Collider spinnerCol = SpinForward.Player.SpinnerController.Instance.GetComponent<Collider>();
+                if (spinnerCol != null)
+                    Physics.IgnoreCollision(myCol, spinnerCol);
             }
-            
+
             // Buz Küpü Mekaniği
             if (myType == CubeType.Ice && SpinForward.Player.SpinnerController.Instance != null)
             {
@@ -211,6 +328,12 @@ namespace SpinForward.Level
                 SpinForward.Player.SpinnerController.Instance.SpawnClones(2, 4f); // 2 klon, 4 saniye
             }
 
+            // Frenzy Mekaniği
+            if (myType == CubeType.Frenzy && SpinForward.Player.SpinnerController.Instance != null)
+            {
+                SpinForward.Player.SpinnerController.Instance.ActivateFrenzy(5f); // 5 saniye Frenzy buff
+            }
+
             float force = knockForce;
             Vector3 dir = (transform.position - hitFrom).normalized + Vector3.up * 0.5f;
             rb.AddForce(dir * force, ForceMode.Impulse);
@@ -218,7 +341,23 @@ namespace SpinForward.Level
 
             Smashed?.Invoke(this);
             AnyCubeSmashed?.Invoke(transform.position);
-            Destroy(gameObject, debrisLifetime);
+            StartCoroutine(ShrinkAndDie());
+        }
+
+        // Quickly shrinks the debris to nothing so a broken cube never lingers in the
+        // spinner's path (which read as "phasing through the cube").
+        private System.Collections.IEnumerator ShrinkAndDie()
+        {
+            Vector3 start = transform.localScale;
+            float dur = Mathf.Min(debrisLifetime, 0.6f);
+            float t = 0f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                transform.localScale = Vector3.Lerp(start, Vector3.zero, t / dur);
+                yield return null;
+            }
+            Destroy(gameObject);
         }
     }
 }

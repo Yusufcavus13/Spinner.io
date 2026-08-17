@@ -9,9 +9,9 @@ namespace SpinForward.Economy
 
         [SerializeField] private Wallet wallet;
         [SerializeField] private Upgrade rotate = new Upgrade("Rotate", 720f, 180f, 10, 1.6f);
-        [SerializeField] private Upgrade power = new Upgrade("Power", 1f, 0.5f, 15, 1.7f);
-        [SerializeField] private Upgrade income = new Upgrade("Income", 1f, 1f, 20, 1.8f);
-        [SerializeField] private Upgrade energy = new Upgrade("Energy", 100f, 20f, 15, 1.6f);
+        [SerializeField] private Upgrade power = new Upgrade("Power", 2f, 1f, 15, 1.7f); // Start with 2 power to break easier
+        [SerializeField] private Upgrade income = new Upgrade("Income", 2f, 1f, 20, 1.8f); // Start with 2 income
+        [SerializeField] private Upgrade energy = new Upgrade("Energy", 150f, 25f, 15, 1.6f); // More base energy
 
         public Upgrade Rotate => rotate;
         public Upgrade Power => power;
@@ -26,6 +26,12 @@ namespace SpinForward.Economy
                 return;
             }
             Instance = this;
+            
+            // Ensure upgrades are initialized if added to an existing prefab
+            if (rotate == null) rotate = new Upgrade("Rotate", 720f, 180f, 10, 1.6f);
+            if (power == null) power = new Upgrade("Power", 2f, 1f, 15, 1.7f);
+            if (income == null) income = new Upgrade("Income", 2f, 1f, 20, 1.8f);
+            if (energy == null) energy = new Upgrade("Energy", 150f, 25f, 15, 1.6f);
         }
 
         private void Start()
@@ -53,9 +59,9 @@ namespace SpinForward.Economy
         private void Reset()
         {
             rotate = new Upgrade("Rotate", 720f, 180f, 10, 1.6f);
-            power = new Upgrade("Power", 1f, 0.5f, 15, 1.7f);
-            income = new Upgrade("Income", 1f, 1f, 20, 1.8f);
-            energy = new Upgrade("Energy", 100f, 20f, 15, 1.6f);
+            power = new Upgrade("Power", 2f, 1f, 15, 1.7f);
+            income = new Upgrade("Income", 2f, 1f, 20, 1.8f);
+            energy = new Upgrade("Energy", 150f, 25f, 15, 1.6f);
         }
     }
 }

@@ -9,11 +9,13 @@ namespace SpinForward.Level
     {
         public static LevelManager Instance { get; private set; }
         public bool IsPlaying => state == State.Playing;
+        public bool IsWaitingToStart => state == State.WaitingToStart;
 
         private enum State { WaitingToStart, Playing, Won, Lost }
 
         [Header("Scene refs")]
         [SerializeField] private CubeWall wall;
+        public CubeWall Wall => wall;
         [SerializeField] private Transform spinner;
 
         [Header("Levels")]
@@ -41,8 +43,14 @@ namespace SpinForward.Level
 
         private State state;
         private int level = 1;
+        [Tooltip("Energy refunded per cube smashed. Lets an active player sustain and finish a level.")]
+        [SerializeField] private float energyPerCube = 0.6f;
+
         private float currentEnergy;
         private float maxEnergy;
+
+        public float CurrentEnergy => currentEnergy;
+        public float MaxEnergy => maxEnergy;
         private Vector3 spinnerStart;
         private Rigidbody spinnerBody;
 
@@ -57,6 +65,9 @@ namespace SpinForward.Level
 
             if (spinner != null)
             {
+                // Kullanıcı spinner objesini değiştirip Tag'lemeyi unutursa diye otomatik Tag ataması yap:
+                spinner.tag = "Spinner";
+
                 spinnerStart = spinner.position;
                 spinnerBody = spinner.GetComponent<Rigidbody>();
             }
@@ -64,26 +75,124 @@ namespace SpinForward.Level
 
         private void Start()
         {
+            if (spinner != null)
+            {
+                spinner.position = spinnerStart;
+            }
+
+            // Old top-right "Energy: 100" text is replaced by the vertical energy bar; hide it.
+            if (timerLabel != null)
+                timerLabel.gameObject.SetActive(false);
+
+            SetupEnvironment();
+
             if (wall != null)
                 wall.Cleared += OnWallCleared;
+            Cube.AnyCubeSmashed += OnAnyCubeSmashed;
             StartLevel();
+        }
+
+        private void SetupEnvironment()
+        {
+            // 1. Gökyüzünü güzel bir mavi yap
+            Camera cam = Object.FindFirstObjectByType<Camera>();
+            if (cam != null)
+            {
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color(0.1f, 0.7f, 1f); // Canlı okyanus/gökyüzü mavisi
+            }
+
+            // 2. Sahnedeki devasa beyaz zemini bul ve "Kum (Sand)" rengine boya!
+            bool groundFound = false;
+            MeshRenderer[] allRenderers = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None);
+            foreach (var rend in allRenderers)
+            {
+                // Y ekseninde 0'a yakın olan, ismi 'Plane' veya 'Ground' olan, veya devasa objeler zeminimizdir.
+                if (rend.transform.position.y <= 0.2f && rend.gameObject.name != "OceanWater" && rend.gameObject.name != "WoodenDock")
+                {
+                    if (rend.gameObject.name.ToLower().Contains("plane") || rend.gameObject.name.ToLower().Contains("ground") || rend.transform.localScale.x > 3f)
+                    {
+                        rend.material.color = new Color(0.93f, 0.84f, 0.55f); // Sıcak kum sarısı
+                        
+                        // Zemin çok küçükse küplerin altı boş kalır ve havada uçuyor gibi görünür.
+                        // O yüzden zemini devasa bir ada boyutuna (200x200 metre) getirelim:
+                        rend.transform.localScale = new Vector3(20f, 1f, 30f);
+                        rend.transform.position = new Vector3(0f, 0f, 30f); // İleriye doğru uzat
+                        groundFound = true;
+                    }
+                }
+            }
+            
+            // Eğer sahnede hiç zemin yoksa (kullanıcı silmişse) biz oluşturalım:
+            if (!groundFound)
+            {
+                GameObject sand = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                sand.name = "SandGround_Auto";
+                sand.transform.position = new Vector3(0f, 0f, 30f);
+                sand.transform.localScale = new Vector3(20f, 1f, 30f);
+                Renderer sr = sand.GetComponent<Renderer>();
+                if (sr != null)
+                {
+                    Shader urp = Shader.Find("Universal Render Pipeline/Lit");
+                    sr.material = new Material(urp != null ? urp : Shader.Find("Standard"));
+                    sr.material.color = new Color(0.93f, 0.84f, 0.55f);
+                }
+            }
+
+            // 3. Ada hissi yaratmak için aşağıya devasa bir su/okyanus zemini ekle
+            GameObject water = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            water.name = "OceanWater";
+            water.transform.position = new Vector3(0f, -0.8f, 20f); // Kum zeminin hemen altına
+            water.transform.localScale = new Vector3(200f, 1f, 200f); // Uçsuz bucaksız
+            
+            Renderer r = water.GetComponent<Renderer>();
+            if (r != null)
+            {
+                Shader urp = Shader.Find("Universal Render Pipeline/Lit");
+                r.material = new Material(urp != null ? urp : Shader.Find("Standard"));
+                r.material.color = new Color(0.15f, 0.65f, 0.9f, 0.9f); // Turkuaz okyanus mavisi
+                r.material.SetFloat("_Smoothness", 0.9f);
+            }
+
+            // Sınır duvarlarını oluştur (Görünmez duvarlar, aşağı düşmeyi engeller)
+            CreateInvisibleWall(new Vector3(0f, 2f, -10f), new Vector3(100f, 10f, 2f)); // Arka duvar (genişletildi)
+            CreateInvisibleWall(new Vector3(-50f, 2f, 30f), new Vector3(2f, 10f, 100f)); // Sol duvar
+            CreateInvisibleWall(new Vector3(50f, 2f, 30f), new Vector3(2f, 10f, 100f)); // Sağ duvar
+        }
+
+        private void CreateInvisibleWall(Vector3 pos, Vector3 scale)
+        {
+            GameObject wall = new GameObject("InvisibleBarrier");
+            wall.transform.position = pos;
+            wall.transform.localScale = scale;
+            BoxCollider col = wall.AddComponent<BoxCollider>();
+            // MeshRenderer eklemiyoruz, bu yüzden tamamen görünmez! Sadece düşmeyi engeller.
         }
 
         private void OnDestroy()
         {
             if (wall != null)
                 wall.Cleared -= OnWallCleared;
+            Cube.AnyCubeSmashed -= OnAnyCubeSmashed;
+        }
+
+        // Smashing cubes refunds energy, so actively clearing keeps you alive.
+        private void OnAnyCubeSmashed(Vector3 pos)
+        {
+            if (state != State.Playing)
+                return;
+            currentEnergy = Mathf.Min(maxEnergy, currentEnergy + energyPerCube);
         }
 
         private void Update()
         {
             if (state == State.WaitingToStart)
             {
-                if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+                // While the shop is open, ignore taps so buying doesn't start the game.
+                if (!SpinForward.UI.UIShop.IsOpen &&
+                    (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)))
                 {
-                    state = State.Playing;
-                    if (tapToPlayPanel != null) tapToPlayPanel.SetActive(false);
-                    onGameState?.Invoke();
+                    BeginPlaying();
                 }
                 return;
             }
@@ -92,10 +201,10 @@ namespace SpinForward.Level
                 return;
 
             // Enerji Tüketimi (Hareket ederken daha hızlı tükenebilir ama şimdilik sabit)
-            float energyDrainRate = 5f; // Saniyede 5 birim
+            float energyDrainRate = 1.5f; // Saniyede 1.5 birim (yavaşlatıldı)
             if (spinnerBody != null && spinnerBody.linearVelocity.magnitude > 0.5f)
             {
-                energyDrainRate = 10f; // Hareket ederken daha hızlı tükenir
+                energyDrainRate = 2.5f; // Hareket ederken biraz daha hızlı
             }
 
             currentEnergy -= energyDrainRate * Time.deltaTime;
@@ -116,6 +225,16 @@ namespace SpinForward.Level
                 float pct = (float)destroyed / wall.TotalCubes;
                 progressLabel.text = $"% {Mathf.FloorToInt(pct * 100f)}";
             }
+        }
+
+        // Called by the tap-to-play input and by the Shop's PLAY button.
+        public void BeginPlaying()
+        {
+            if (state != State.WaitingToStart)
+                return;
+            state = State.Playing;
+            if (tapToPlayPanel != null) tapToPlayPanel.SetActive(false);
+            onGameState?.Invoke();
         }
 
         private void StartLevel(bool autoStart = false)

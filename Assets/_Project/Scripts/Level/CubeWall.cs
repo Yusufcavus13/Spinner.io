@@ -71,6 +71,8 @@ namespace SpinForward.Level
                     // Sample the sprite DOWN to a capped grid instead of one cube per
                     // pixel. A 96x96 photo at maxResolution 40 becomes 40x40 (~1600
                     // cubes) instead of ~9200 - the difference between smooth and dead.
+                    // Use the level's own resolution (full detail); completability comes
+                    // from the per-cube energy refund (LevelManager), not a small cube count.
                     int cap = Mathf.Max(8, data.maxResolution);
                     columns = Mathf.Min(sprite.width, cap);
                     rows = Mathf.Min(sprite.height, cap);
@@ -194,7 +196,7 @@ namespace SpinForward.Level
                     if (!shouldSpawn) continue;
                     
                     float x = (c - (columns - 1) / 2f) * spacing;
-                    float z = r * spacing;
+                    float z = r * spacing + 5f; // Başlangıç pozisyonunu biraz ileri (Z ekseninde) kaydır
                     Vector3 localPos = new Vector3(x, groundHeight, z);
                     Vector3 pos = transform.position + localPos;
 
@@ -213,6 +215,11 @@ namespace SpinForward.Level
                         float tShield = tIce + data.shieldCubeChance;
                         float tSplit = tShield + data.splitCubeChance;
 
+                        float tFrenzy = tSplit + (data != null ? data.frenzyCubeChance : 0f);
+
+                        float tLaser = tFrenzy + (data != null ? data.laserCubeChance : 0f);
+                        float tGold = tLaser + (data != null ? data.goldCubeChance : 0f);
+
                         if (rand < tBomb && spawnedBombs < data.maxBombs)
                         {
                             type = CubeType.Bomb;
@@ -223,14 +230,14 @@ namespace SpinForward.Level
                         else if (rand < tIce) type = CubeType.Ice;
                         else if (rand < tShield) type = CubeType.Shield;
                         else if (rand < tSplit) type = CubeType.Split;
+                        else if (rand < tFrenzy) type = CubeType.Frenzy;
+                        else if (rand < tLaser) type = CubeType.Laser;
+                        else if (rand < tGold) type = CubeType.Gold;
                     }
 
-                    // Inner cubes of a sprite image are tougher: the distance-transform
-                    // depth adds health, so you dig from the edges inward (boss's 96x96 idea).
-                    // Applied AFTER the base health so it isn't overwritten.
-                    if (sprite != null)
-                        health += (distanceMap[c, r] - 1) / 2;
-
+                    // Resmin iç tarafında kalan siyah veya koyu renkli küplerin aşırı
+                    // canlanıp kırılamaz hale gelmesini önlemek için extraHealth mekanizması KALDIRILDI.
+                        
                     cube.Init(type, health);
 
                     // Moving/breathing walls need a kinematic Rigidbody to slide cheaply;
@@ -242,7 +249,11 @@ namespace SpinForward.Level
                     if (type == CubeType.Bomb)
                         cube.SetColor(Color.red);
                     else if (type == CubeType.Steel)
-                        cube.SetColor(Color.black);
+                        cube.SetColor(new Color(0.32f, 0.35f, 0.42f)); // metalik gri
+                    else if (type == CubeType.Laser)
+                        cube.SetColor(Color.cyan);
+                    else if (type == CubeType.Gold)
+                        cube.SetColor(new Color(1f, 0.84f, 0f)); // Gold (Altın sarısı)
                     else if (type == CubeType.Normal)
                     {
                         if (sprite != null)
@@ -405,7 +416,11 @@ namespace SpinForward.Level
             remaining = 0;
             totalCubes = 0;
             activeCubes.Clear();
+            
+            if (envRoot != null) Destroy(envRoot.gameObject);
         }
+
+        private Transform envRoot;
 
         private void OnCubeSmashed(Cube cube)
         {

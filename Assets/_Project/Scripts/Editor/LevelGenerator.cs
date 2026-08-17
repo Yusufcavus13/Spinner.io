@@ -34,14 +34,16 @@ namespace SpinForward.Editor
                 level.attemptDuration = 20f + (i * 2f);
                 level.cubeHealth = 1 + (i / 10);
                 
-                level.maxBombs = 1 + (i / 4);
-                level.bombCubeChance = Mathf.Min(0.25f, i * 0.015f);
+                level.maxBombs = 1 + (i / 2);
+                if (level.maxBombs > 5) level.maxBombs = 5;
+                level.bombCubeChance = Mathf.Min(0.25f, i * 0.02f);
                 level.steelCubeChance = Mathf.Min(0.15f, (i > 5 ? (i - 5) * 0.01f : 0f));
                 
                 // Yeni Küpler
                 level.iceCubeChance = Mathf.Min(0.1f, (i > 2 ? 0.05f : 0f)); // Buz küpü 3. leveldan itibaren
                 level.shieldCubeChance = Mathf.Min(0.15f, (i > 4 ? 0.08f : 0f)); // Kalkanlı küp 5. leveldan itibaren
                 level.splitCubeChance = Mathf.Min(0.05f, (i > 3 ? 0.03f : 0f)); // Klonlanma nadir bir ödül
+                level.frenzyCubeChance = 0.05f; // %5 ihtimalle Frenzy
                 level.vortexCount = (i > 5) ? 1 + (i / 10) : 0; // Girdap 6. leveldan itibaren 1 tane, sonra artar
                 
                 // Şekiller ve Hareketler

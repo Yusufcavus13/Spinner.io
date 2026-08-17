@@ -45,6 +45,47 @@ namespace SpinForward.Player
         {
             Instance = this;
             rb = GetComponent<Rigidbody>();
+            visualRenderer = GetComponentInChildren<Renderer>();
+            if (visualRenderer != null)
+                originalVisualColor = visualRenderer.material.color;
+
+            // Kullanıcı yanlışlıkla ayarları bozmuşsa düzelt:
+            if (rb != null)
+            {
+                rb.isKinematic = false;
+                // Freeze rotation AND vertical position: the spinner stays at a fixed
+                // height so it can never climb up onto the cubes - it always hits them
+                // side-on and plows through instead of riding over the top.
+                rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
+                rb.useGravity = false; // Y is locked, so no gravity needed
+                // Stop the fast spinner from tunnelling INTO the static cubes.
+                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                rb.interpolation = RigidbodyInterpolation.Interpolate; // smoother visual motion
+            }
+
+            // Spinner'ın Y pozisyonunu tam küplerin merkezine (0.5f) sabitle ki üstlerinden uçmasın.
+            transform.position = new Vector3(transform.position.x, 0.5f, transform.position.z);
+
+            // Çarpışmalarda geri sekmeyi ve takılmayı önlemek için pürüzsüz PhysicsMaterial
+            Collider col = GetComponent<Collider>();
+            if (col != null)
+            {
+                PhysicsMaterial smoothMat = new PhysicsMaterial("SpinnerSmooth");
+                smoothMat.bounciness = 0f;
+                smoothMat.dynamicFriction = 0f;
+                smoothMat.staticFriction = 0f;
+                smoothMat.frictionCombine = PhysicsMaterialCombine.Minimum;
+                smoothMat.bounceCombine = PhysicsMaterialCombine.Minimum;
+                col.material = smoothMat;
+            }
+
+            // Eğer "Afilli model" için bir Animator eklendiyse ve Root Motion açıksa, fizik hareketini kitler!
+            Animator anim = GetComponent<Animator>();
+            if (anim != null)
+            {
+                anim.applyRootMotion = false;
+            }
+
             if (visual != null)
             {
                 visualBaseRot = visual.localRotation; // preserve the model's resting orientation
@@ -55,6 +96,35 @@ namespace SpinForward.Player
                 }
             }
         }
+
+        private void Start() => MatchColliderToVisual();
+
+        /// <summary>Sizes the physics collider to the current visual so cubes break where the
+        /// model touches them. Y is frozen, so this is a pure horizontal hit volume CENTERED
+        /// on the spinner - no vertical offset (the old offset shoved the spinner backwards).</summary>
+        public void MatchColliderToVisual()
+        {
+            if (visual == null || !TryGetComponent(out SphereCollider sc))
+                return;
+
+            Renderer[] rends = visual.GetComponentsInChildren<Renderer>();
+            if (rends.Length == 0)
+                return;
+
+            Bounds b = rends[0].bounds;
+            for (int i = 1; i < rends.Length; i++)
+                b.Encapsulate(rends[i].bounds);
+
+            float worldRadius = Mathf.Max(b.extents.x, b.extents.z);
+            float lossy = Mathf.Max(0.0001f, transform.lossyScale.x);
+            sc.center = Vector3.zero;
+            sc.radius = Mathf.Clamp(worldRadius / lossy, 0.4f, 1.1f);
+        }
+
+        // Frenzy ve Direnç Değişkenleri
+        public bool IsFrenzyActive => frenzyTimer > 0f;
+        private float frenzyTimer = 0f;
+        private Vector3 grindPushBack = Vector3.zero;
 
         private void Update()
         {
@@ -67,9 +137,19 @@ namespace SpinForward.Player
                     isIceVisualActive = true;
                 }
             }
+            else if (frenzyTimer > 0f)
+            {
+                frenzyTimer -= Time.deltaTime;
+                if (visualRenderer != null)
+                {
+                    // Frenzy boyunca altın/kırmızı arası titreşen renk
+                    float t = Mathf.PingPong(Time.time * 10f, 1f);
+                    visualRenderer.material.color = Color.Lerp(Color.yellow, Color.red, t);
+                }
+            }
             else
             {
-                if (isIceVisualActive && visualRenderer != null)
+                if ((isIceVisualActive || visualRenderer?.material.color != originalVisualColor) && visualRenderer != null)
                 {
                     visualRenderer.material.color = originalVisualColor;
                     isIceVisualActive = false;
@@ -80,8 +160,8 @@ namespace SpinForward.Player
             if (UpgradeSystem.Instance != null)
                 spin = UpgradeSystem.Instance.Rotate.Value;
                 
-            // Fever Mode hızı 2'ye katlar!
-            if (SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive)
+            // Fever veya Frenzy Mode hızı katlar!
+            if ((SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive) || IsFrenzyActive)
             {
                 spin *= 2f;
             }
@@ -123,8 +203,12 @@ namespace SpinForward.Player
             float currentMoveSpeed = moveSpeed;
             if (SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive)
             {
-                // Obje büyüdüğü için normal hız yavaş hissettirir. Hızı 2.5 katına çıkarıyoruz!
                 currentMoveSpeed *= 2.5f; 
+            }
+            
+            if (IsFrenzyActive)
+            {
+                currentMoveSpeed *= 1.5f; // Frenzy hızı %50 artırır
             }
             
             // Buz yavaşlatması (%75 yavaşlar)
@@ -140,8 +224,24 @@ namespace SpinForward.Player
             Vector3 vel = rb.linearVelocity;
             Vector3 horizNow = new Vector3(vel.x, 0f, vel.z);
             Vector3 horizNext = Vector3.MoveTowards(horizNow, targetVel, acceleration * Time.fixedDeltaTime);
+            
+            // Fiziksel Direnç (Push-back) eklentisi
+            horizNext += grindPushBack;
+            grindPushBack = Vector3.Lerp(grindPushBack, Vector3.zero, Time.fixedDeltaTime * 10f); // Hızlıca sönümlenir
 
             rb.linearVelocity = new Vector3(horizNext.x, vel.y, horizNext.z);
+        }
+        
+        public void ApplyGrindResistance(Vector3 direction, float resistance)
+        {
+            if (IsFrenzyActive) return; // Frenzy modunda direnç hissetmez, yarıp geçer!
+            grindPushBack += direction * resistance * 0.2f;
+            if (grindPushBack.magnitude > resistance) grindPushBack = Vector3.ClampMagnitude(grindPushBack, resistance);
+        }
+
+        public void ActivateFrenzy(float duration)
+        {
+            frenzyTimer = duration;
         }
         
         public void ApplyIceDebuff(float duration)
@@ -153,20 +253,20 @@ namespace SpinForward.Player
         {
             for (int i = 0; i < count; i++)
             {
-                // Klon için bir sphere oluştur
-                GameObject clone = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                clone.name = "SpinnerClone";
+                // Klon için ana fiziksel obje
+                GameObject clone = new GameObject("SpinnerClone");
                 clone.transform.position = transform.position + new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f));
-                clone.transform.localScale = transform.localScale * 0.5f; // Yarı boyutunda
+                clone.transform.localScale = transform.localScale * 0.6f; // Yarı boyutunda
                 clone.tag = gameObject.tag; // Cube scriptinin tanıması için aynı tag (Örn: "Spinner")
 
-                // Fizik özellikleri (Zıplaması için material ve rigidbody)
+                // Fizik özellikleri 
                 Rigidbody cloneRb = clone.AddComponent<Rigidbody>();
                 cloneRb.mass = 2f;
                 cloneRb.linearVelocity = new Vector3(Random.Range(-10f, 10f), 0, Random.Range(-10f, 10f));
-                
-                // Zıplaklık için PhysicsMaterial
-                SphereCollider col = clone.GetComponent<SphereCollider>();
+                cloneRb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+                // Zıplaklık için PhysicsMaterial ve Collider
+                SphereCollider col = clone.AddComponent<SphereCollider>();
                 PhysicsMaterial bMat = new PhysicsMaterial("BouncyClone");
                 bMat.bounciness = 1f;
                 bMat.dynamicFriction = 0f;
@@ -174,11 +274,29 @@ namespace SpinForward.Player
                 bMat.bounceCombine = PhysicsMaterialCombine.Maximum;
                 col.material = bMat;
                 
-                // Görsel olarak kırmızı/turuncu arası bir renk (Ateş efekti gibi)
-                Renderer r = clone.GetComponent<Renderer>();
-                if(r != null)
+                // Oyuncu ile klon çarpışmasın (fiziksel fırlama hatasını önler)
+                Collider myCol = GetComponent<Collider>();
+                if (myCol != null)
                 {
-                    r.material.color = new Color(1f, 0.5f, 0f);
+                    Physics.IgnoreCollision(myCol, col);
+                }
+
+                // Oyuncunun kendi görselini kopyalayıp klona ekle
+                if (visual != null)
+                {
+                    GameObject cloneVisual = Instantiate(visual.gameObject, clone.transform);
+                    cloneVisual.transform.localPosition = Vector3.zero;
+                    
+                    // Klonun SpinnerVisuals componenti varsa silelim (kendi kendini scale etmesin)
+                    SpinnerVisuals sv = cloneVisual.GetComponent<SpinnerVisuals>();
+                    if (sv != null) Destroy(sv);
+
+                    // Klonların Trail rengini ateşli kırmızı/turuncu yapalım ki ayırt edilsinler
+                    TrailRenderer tr = cloneVisual.GetComponentInChildren<TrailRenderer>();
+                    if (tr != null)
+                    {
+                        tr.startColor = new Color(1f, 0.4f, 0f);
+                    }
                 }
 
                 Destroy(clone, lifetime); // Belirli bir süre sonra klon yok olsun

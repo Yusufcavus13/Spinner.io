@@ -49,6 +49,15 @@ namespace SpinForward.Level
         [Tooltip("Chance (0 to 1) for a cube to be a Split/Clone Powerup Cube.")]
         [Range(0f, 1f)] public float splitCubeChance = 0f;
         
+        [Tooltip("Chance (0 to 1) for a cube to be a Frenzy Powerup Cube.")]
+        [Range(0f, 1f)] public float frenzyCubeChance = 0f;
+
+        [Tooltip("Chance (0 to 1) for a cube to be a Laser Cube.")]
+        [Range(0f, 1f)] public float laserCubeChance = 0f;
+
+        [Tooltip("Chance (0 to 1) for a cube to be a Gold (Bonus) Cube.")]
+        [Range(0f, 1f)] public float goldCubeChance = 0f;
+        
         [Header("Environmental Hazards")]
         [Tooltip("Number of Vortex (Black Hole) hazards to spawn in this level.")]
         [Min(0)] public int vortexCount = 0;

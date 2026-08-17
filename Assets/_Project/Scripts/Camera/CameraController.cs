@@ -69,10 +69,18 @@ namespace SpinForward.CameraControl
 
         private void OnCubeSmashed(Vector3 pos)
         {
-            // Cinemachine'in kendi profesyonel sarsıntı (Impulse) motorunu tetikle!
+            // Normal küp kırılmasında çok hafif bir titreşim
             if (impulseSource != null)
             {
-                impulseSource.GenerateImpulse();
+                impulseSource.GenerateImpulseWithVelocity(Random.insideUnitSphere * 0.1f);
+            }
+        }
+        
+        public void HeavyShake(float intensity = 1f)
+        {
+            if (impulseSource != null)
+            {
+                impulseSource.GenerateImpulseWithVelocity(Random.insideUnitSphere * intensity);
             }
         }
     }

@@ -252,6 +252,7 @@ namespace SpinForward.Level
             if (SpinForward.CameraControl.CameraController.Instance != null)
             {
                 SpinForward.CameraControl.CameraController.Instance.HeavyShake(2f);
+                SpinForward.CameraControl.CameraController.Instance.HitStop(0.07f);
             }
             
             Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius);

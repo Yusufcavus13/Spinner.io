@@ -83,5 +83,21 @@ namespace SpinForward.CameraControl
                 impulseSource.GenerateImpulseWithVelocity(Random.insideUnitSphere * intensity);
             }
         }
+
+        /// <summary>Briefly freezes time for a punchy "impact" feel (bombs, big hits).</summary>
+        public void HitStop(float duration = 0.06f)
+        {
+            if (Time.timeScale < 0.9f)
+                return; // don't stack, and don't fight the shop's pause
+            StartCoroutine(HitStopRoutine(duration));
+        }
+
+        private System.Collections.IEnumerator HitStopRoutine(float duration)
+        {
+            Time.timeScale = 0.05f;
+            yield return new WaitForSecondsRealtime(duration);
+            // Resume, unless the shop paused the game in the meantime.
+            Time.timeScale = SpinForward.UI.UIShop.IsOpen ? 0f : 1f;
+        }
     }
 }

@@ -323,8 +323,10 @@ namespace SpinForward.Level
             if (remaining <= 0) return;
             if (isBreathing)
             {
+                // Gentle breathing (±7%). ±30% scaled the whole wall so hard it looked
+                // like the camera was zooming in and out.
                 float sineValue = Mathf.Sin(Time.time * moveSpeed);
-                float scalePulse = 1f + sineValue * 0.3f;
+                float scalePulse = 1f + sineValue * 0.07f;
                 transform.localScale = Vector3.one * scalePulse;
             }
         }

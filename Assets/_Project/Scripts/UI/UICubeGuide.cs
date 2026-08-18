@@ -26,7 +26,7 @@ namespace SpinForward.UI
         private static readonly Entry[] Entries =
         {
             new Entry(Color.red,                          "Bomba",          "Patlar, çevreyi temizler — yakınındaysan enerji kaybedersin!"),
-            new Entry(new Color(0.72f, 0.1f, 0.95f),      "Tuzak (mor)",    "Parlayan mor. Vurunca enerjini emer — kaçınmaya çalış!"),
+            new Entry(new Color(0.35f, 0.85f, 0.1f),      "Tuzak (yeşil)",  "Parlayan zehirli yeşil. Vurunca enerjini emer — kaçın!"),
             new Entry(new Color(1f, 0.55f, 0.05f),        "Zaman Bombası",  "Yaklaşınca sayar; 6 sn'de kırmazsan patlar!"),
             new Entry(Color.cyan,                         "Laser (avantaj)","Parlayan camgöbeği. Satır + sütunu komple temizler!"),
             new Entry(new Color(0.32f, 0.35f, 0.42f),     "Çelik",          "Sert (çok vuruş). Kırmak zorunlu değil, yolu tıkar."),

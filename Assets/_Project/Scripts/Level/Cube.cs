@@ -27,7 +27,7 @@ namespace SpinForward.Level
 
         [Header("Drain (Trap) Cube")]
         [Tooltip("Energy the glowing drain cube saps when smashed.")]
-        [SerializeField] private float drainAmount = 10f;
+        [SerializeField] private float drainAmount = 6f;
 
         [Header("Time Bomb Cube")]
         [Tooltip("Seconds before an ARMED time-bomb cube detonates on its own.")]
@@ -90,7 +90,7 @@ namespace SpinForward.Level
             else if (myType == CubeType.Frenzy)
                 SetColor(Color.yellow); // Frenzy = Golden/Yellow
             else if (myType == CubeType.Drain)
-                SetGlowColor(new Color(0.72f, 0.1f, 0.95f)); // parlayan mor tuzak - net ayırt edilir
+                SetGlowColor(new Color(0.35f, 0.85f, 0.1f)); // parlayan ZEHİRLİ YEŞİL tuzak - maviyle karışmaz
             else if (myType == CubeType.TimeBomb)
             {
                 SetGlowColor(new Color(1f, 0.55f, 0.05f)); // dormant: glowing amber, clearly distinct

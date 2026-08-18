@@ -53,6 +53,10 @@ namespace SpinForward.Level
         private float refundThisSecond;
         private float refundTimer;
 
+        [Tooltip("Max energy that can be DRAINED (traps/bombs) per second - stops a cluster of traps from instantly ending the run.")]
+        [SerializeField] private float maxDrainPerSecond = 18f;
+        private float drainThisSecond;
+
         [Header("Retry Penalty")]
         [Tooltip("Fraction of money lost when you fail and retry.")]
         [Range(0f, 1f)] [SerializeField] private float retryMoneyPenalty = 0.3f;
@@ -198,7 +202,11 @@ namespace SpinForward.Level
         {
             if (state != State.Playing)
                 return;
-            currentEnergy = Mathf.Max(0f, currentEnergy - amount);
+            // Cap total drain per second so a cluster of trap cubes (or bombs) can't wipe the
+            // whole bar in a single frame - that read as a random, unfair "you lose".
+            float applied = Mathf.Min(amount, Mathf.Max(0f, maxDrainPerSecond - drainThisSecond));
+            drainThisSecond += applied;
+            currentEnergy = Mathf.Max(0f, currentEnergy - applied);
         }
 
         // Buying the Energy upgrade raises max energy - top up current energy by the gained
@@ -271,6 +279,7 @@ namespace SpinForward.Level
             {
                 refundTimer = 1f;
                 refundThisSecond = 0f;
+                drainThisSecond = 0f;
             }
             
             if (timerLabel != null)

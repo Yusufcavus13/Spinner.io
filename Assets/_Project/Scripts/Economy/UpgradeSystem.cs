@@ -32,6 +32,13 @@ namespace SpinForward.Economy
             if (power == null) power = new Upgrade("Power", 2f, 1f, 15, 1.7f);
             if (income == null) income = new Upgrade("Income", 2f, 1f, 20, 1.8f);
             if (energy == null) energy = new Upgrade("Energy", 150f, 25f, 15, 1.6f);
+
+            // Balance enforced in code (levels kept): Power & Income scale much harder and
+            // costs grow gently (1.5x), so the economy flows and Energy stays affordable.
+            rotate.Configure(720f, 200f, 10, 1.5f);   // spin speed +200/level
+            power.Configure(2f, 2f, 15, 1.5f);        // damage +2/level (was +1)
+            income.Configure(3f, 4f, 25, 1.5f);       // money/cube +4/level (was +1)
+            energy.Configure(150f, 35f, 15, 1.5f);    // max energy +35/level (was +25)
         }
 
         private void Start()

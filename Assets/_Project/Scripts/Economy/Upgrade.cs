@@ -56,5 +56,16 @@ namespace SpinForward.Economy
             level = Mathf.Max(0, level - amount);
             Changed?.Invoke();
         }
+
+        // Sets the balance numbers from code WITHOUT touching the current level, so tuning
+        // doesn't depend on stale serialized values.
+        public void Configure(float baseValue, float valuePerLevel, int baseCost, float costGrowth)
+        {
+            this.baseValue = baseValue;
+            this.valuePerLevel = valuePerLevel;
+            this.baseCost = baseCost;
+            this.costGrowth = costGrowth;
+            Changed?.Invoke();
+        }
     }
 }

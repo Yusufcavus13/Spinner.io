@@ -236,12 +236,11 @@ namespace SpinForward.Level
                 return;
 
             // Enerji Tüketimi (Hareket ederken daha hızlı tükenebilir ama şimdilik sabit)
-            // Faster drain again so there is real pressure: the per-cube refund only
-            // sustains you if you keep clearing efficiently (dawdling = you run out).
-            float energyDrainRate = 2.5f;
+            // Real pressure, but a little gentler so a near-finish actually finishes.
+            float energyDrainRate = 2f;
             if (spinnerBody != null && spinnerBody.linearVelocity.magnitude > 0.5f)
             {
-                energyDrainRate = 4f; // moving costs more
+                energyDrainRate = 3.5f; // moving costs more
             }
 
             currentEnergy -= energyDrainRate * Time.deltaTime;

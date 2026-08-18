@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c43a1e6ddb1d44173a8c2c0810be4042, type: 3}
   m_Name: Level_2
   m_EditorClassIdentifier: Assembly-CSharp::SpinForward.Level.LevelData
+  levelSprite: {fileID: 2800000, guid: 981fdc468ecf3457185f77da2705f8fc, type: 3}
+  maxResolution: 45
+  colorSteps: 6
   columns: 5
   rows: 5
   shape: 2
@@ -23,6 +26,9 @@ MonoBehaviour:
   iceCubeChance: 0
   shieldCubeChance: 0
   splitCubeChance: 0
+  frenzyCubeChance: 0
+  laserCubeChance: 0
+  goldCubeChance: 0
   vortexCount: 0
   isMoving: 1
   alternateRowMovement: 0

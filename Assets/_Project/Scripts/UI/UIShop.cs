@@ -15,6 +15,7 @@ namespace SpinForward.UI
     /// </summary>
     public class UIShop : MonoBehaviour
     {
+        public static UIShop Instance { get; private set; }
         public static bool IsOpen { get; private set; }
 
         [Header("Colors")]
@@ -53,6 +54,12 @@ namespace SpinForward.UI
             bool show = !IsOpen && LevelManager.Instance != null && !LevelManager.Instance.IsPlaying;
             if (openButton.activeSelf != show)
                 openButton.SetActive(show);
+        }
+
+        private void Awake()
+        {
+            if (Instance == null) Instance = this;
+            else Destroy(gameObject);
         }
 
         private void Start()
@@ -198,7 +205,7 @@ namespace SpinForward.UI
 
         // ---------- State ----------
 
-        private void Open()
+        public void Open()
         {
             if (LevelManager.Instance != null && LevelManager.Instance.IsPlaying)
                 Time.timeScale = 0f; // pause the game while shopping mid-run

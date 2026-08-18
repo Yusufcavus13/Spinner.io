@@ -46,8 +46,7 @@ namespace SpinForward.Level
         [Tooltip("Chance (0 to 1) for a cube to be a 2-hit Shield Cube.")]
         [Range(0f, 1f)] public float shieldCubeChance = 0f;
         
-        [Tooltip("Chance (0 to 1) for a cube to be a Split/Clone Powerup Cube.")]
-        [Range(0f, 1f)] public float splitCubeChance = 0f;
+
         
         [Tooltip("Chance (0 to 1) for a cube to be a Frenzy Powerup Cube.")]
         [Range(0f, 1f)] public float frenzyCubeChance = 0f;

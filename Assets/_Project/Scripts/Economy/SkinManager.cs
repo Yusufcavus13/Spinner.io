@@ -51,7 +51,7 @@ namespace SpinForward.Economy
         private void BuildDefaultSkins()
         {
             availableSkins.Add(new SkinData { skinName = "Klasik",  cost = 0,    shape = SpinnerShape.Disc, bonusDamage = 0,  bodyColor = C(0.11f, 0.42f, 0.95f), accentColor = C(0.2f, 0.95f, 1f),  pointerColor = C(1f, 0.30f, 0.35f) });
-            availableSkins.Add(new SkinData { skinName = "Testere",  cost = 150,  shape = SpinnerShape.Saw,  bonusDamage = 2,  bodyColor = C(0.85f, 0.86f, 0.9f),  accentColor = C(1f, 0.35f, 0.1f),  pointerColor = C(1f, 0.9f, 0.3f) });
+            availableSkins.Add(new SkinData { skinName = "Testere",  cost = 0,    shape = SpinnerShape.Saw,  bonusDamage = 2,  bodyColor = C(0.85f, 0.86f, 0.9f),  accentColor = C(1f, 0.35f, 0.1f),  pointerColor = C(1f, 0.9f, 0.3f) });
             availableSkins.Add(new SkinData { skinName = "Yıldız",   cost = 400,  shape = SpinnerShape.Star, bonusDamage = 3,  bodyColor = C(0.10f, 0.72f, 0.38f), accentColor = C(0.6f, 1f, 0.55f),  pointerColor = C(1f, 1f, 0.7f) });
             availableSkins.Add(new SkinData { skinName = "Dişli",    cost = 900,  shape = SpinnerShape.Gear, bonusDamage = 5,  bodyColor = C(1f, 0.72f, 0.12f),    accentColor = C(1f, 0.96f, 0.65f), pointerColor = C(0.55f, 0.35f, 0f) });
             availableSkins.Add(new SkinData { skinName = "Ametist",  cost = 2000, shape = SpinnerShape.Star, bonusDamage = 8,  bodyColor = C(0.52f, 0.20f, 0.85f), accentColor = C(0.85f, 0.6f, 1f),  pointerColor = C(1f, 0.9f, 1f) });
@@ -62,7 +62,7 @@ namespace SpinForward.Economy
 
         public bool IsSkinUnlocked(int index)
         {
-            if (index == 0) return true;
+            if (index <= 1) return true; // İlk 2 spinner (Klasik ve Testere) bedava/açık
             return PlayerPrefs.GetInt($"SkinUnlocked_{index}", 0) == 1;
         }
 

@@ -257,58 +257,6 @@ namespace SpinForward.Player
             iceDebuffTimer = duration;
         }
         
-        public void SpawnClones(int count, float lifetime)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                // Klon için ana fiziksel obje
-                GameObject clone = new GameObject("SpinnerClone");
-                clone.transform.position = transform.position + new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f));
-                clone.transform.localScale = transform.localScale * 0.6f; // Yarı boyutunda
-                clone.tag = gameObject.tag; // Cube scriptinin tanıması için aynı tag (Örn: "Spinner")
 
-                // Fizik özellikleri 
-                Rigidbody cloneRb = clone.AddComponent<Rigidbody>();
-                cloneRb.mass = 2f;
-                cloneRb.linearVelocity = new Vector3(Random.Range(-10f, 10f), 0, Random.Range(-10f, 10f));
-                cloneRb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-
-                // Zıplaklık için PhysicsMaterial ve Collider
-                SphereCollider col = clone.AddComponent<SphereCollider>();
-                PhysicsMaterial bMat = new PhysicsMaterial("BouncyClone");
-                bMat.bounciness = 1f;
-                bMat.dynamicFriction = 0f;
-                bMat.staticFriction = 0f;
-                bMat.bounceCombine = PhysicsMaterialCombine.Maximum;
-                col.material = bMat;
-                
-                // Oyuncu ile klon çarpışmasın (fiziksel fırlama hatasını önler)
-                Collider myCol = GetComponent<Collider>();
-                if (myCol != null)
-                {
-                    Physics.IgnoreCollision(myCol, col);
-                }
-
-                // Oyuncunun kendi görselini kopyalayıp klona ekle
-                if (visual != null)
-                {
-                    GameObject cloneVisual = Instantiate(visual.gameObject, clone.transform);
-                    cloneVisual.transform.localPosition = Vector3.zero;
-                    
-                    // Klonun SpinnerVisuals componenti varsa silelim (kendi kendini scale etmesin)
-                    SpinnerVisuals sv = cloneVisual.GetComponent<SpinnerVisuals>();
-                    if (sv != null) Destroy(sv);
-
-                    // Klonların Trail rengini ateşli kırmızı/turuncu yapalım ki ayırt edilsinler
-                    TrailRenderer tr = cloneVisual.GetComponentInChildren<TrailRenderer>();
-                    if (tr != null)
-                    {
-                        tr.startColor = new Color(1f, 0.4f, 0f);
-                    }
-                }
-
-                Destroy(clone, lifetime); // Belirli bir süre sonra klon yok olsun
-            }
-        }
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Split, Frenzy, Laser, Gold, Drain, TimeBomb }
+    public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Frenzy, Laser, Gold, Drain, TimeBomb }
 
     public class Cube : MonoBehaviour
     {
@@ -72,7 +72,7 @@ namespace SpinForward.Level
             transform.localScale = Vector3.one; 
             
             if (type == CubeType.Steel)
-                currentHealth = 8; // sert ama kırılabilir (eskiden 9999 = kırılamazdı)
+                currentHealth = 14; // sert ama kırılabilir (eskiden 9999 = kırılamazdı)
             else if (type == CubeType.Shield)
             {
                 currentHealth = health + 1; 
@@ -85,8 +85,6 @@ namespace SpinForward.Level
                 SetColor(new Color(0.5f, 0.8f, 1f)); 
             else if (myType == CubeType.Shield)
                 SetColor(Color.grey); 
-            else if (myType == CubeType.Split)
-                SetColor(new Color(1f, 0.5f, 0f)); 
             else if (myType == CubeType.Frenzy)
                 SetColor(Color.yellow); // Frenzy = Golden/Yellow
             else if (myType == CubeType.Drain)
@@ -270,6 +268,17 @@ namespace SpinForward.Level
                 return; // Kalkan kırıldığı için asıl hasarı alma
             }
 
+            // Çelik Küp (Steel) Mekaniği: Normal vuruşlar işlemez! Sadece Bomba, Lazer veya Fever kırabilir.
+            if (myType == CubeType.Steel && !isFever && amount < 500)
+            {
+                // Kıvılcım veya ses efekti eklenebilir
+                if (SpinForward.UI.FloatingTextManager.Instance != null)
+                {
+                    SpinForward.UI.FloatingTextManager.Instance.ShowDamage(0, transform.position); // Hasar sıfır (veya "Zırhlı")
+                }
+                return; // Hasar almaz!
+            }
+
             currentHealth -= amount;
 
             // Ekrana hasar miktarını yazdır (Fever modunda 9999 yazmasın diye gizledik!)
@@ -392,19 +401,19 @@ namespace SpinForward.Level
 
             var main = ps.main;
             main.duration = 1f;
-            main.startLifetime = 1f;
+            main.startLifetime = 0.4f; // 1 saniyeden 0.4'e düşürüldü
             main.startSpeed = 8f;
-            main.startSize = 0.4f;
+            main.startSize = 0.3f;
             main.startColor = (rend != null) ? rend.sharedMaterial.color : Color.white;
             var emission = ps.emission;
             emission.rateOverTime = 0;
-            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 10, 15) });
+            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 4, 8) }); // Partikül sayısı azaltıldı
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
             var renderer = ps.GetComponent<ParticleSystemRenderer>();
             renderer.material = new Material(Shader.Find("Sprites/Default"));
             ps.Play();
-            Destroy(psObj, 2f);
+            Destroy(psObj, 0.5f); // 2 saniye yerine 0.5 saniyede yok et
 
             // Frozen cubes carry no Rigidbody; add one now so the debris can fly.
             if (rb == null)
@@ -427,12 +436,6 @@ namespace SpinForward.Level
                 SpinForward.Player.SpinnerController.Instance.ApplyIceDebuff(3f); // 3 saniye yavaşlat
             }
             
-            // Klonlama (Split) Mekaniği
-            if (myType == CubeType.Split && SpinForward.Player.SpinnerController.Instance != null)
-            {
-                SpinForward.Player.SpinnerController.Instance.SpawnClones(2, 4f); // 2 klon, 4 saniye
-            }
-
             // Frenzy Mekaniği
             if (myType == CubeType.Frenzy && SpinForward.Player.SpinnerController.Instance != null)
             {

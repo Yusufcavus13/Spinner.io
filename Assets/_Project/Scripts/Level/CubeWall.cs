@@ -52,6 +52,7 @@ namespace SpinForward.Level
 
             Clear();
             int spawnedBombs = 0; 
+            int[] specialCounts = new int[20]; // 20 is enough to cover all CubeType enum values 
             
             Texture2D sprite = data != null ? data.levelSprite : null;
             Color[] pixels = null;
@@ -203,9 +204,7 @@ namespace SpinForward.Level
                         float tSteel = tBomb + data.steelCubeChance;
                         float tIce = tSteel + data.iceCubeChance;
                         float tShield = tIce + data.shieldCubeChance;
-                        float tSplit = tShield + data.splitCubeChance;
-
-                        float tFrenzy = tSplit + (data != null ? data.frenzyCubeChance : 0f);
+                        float tFrenzy = tShield + (data != null ? data.frenzyCubeChance : 0f);
 
                         float tLaser = tFrenzy + (data != null ? Mathf.Max(data.laserCubeChance, 0.015f) : 0f); // haç temizleyici hep biraz cikar
                         float tGold = tLaser + (data != null ? data.goldCubeChance : 0f);
@@ -214,19 +213,22 @@ namespace SpinForward.Level
 
                         if (rand < tBomb && spawnedBombs < data.maxBombs)
                         {
-                            type = CubeType.Bomb;
-                            health *= 3;
-                            spawnedBombs++;
+                            if (specialCounts[(int)CubeType.Bomb] < 3)
+                            {
+                                type = CubeType.Bomb;
+                                health *= 3;
+                                spawnedBombs++;
+                                specialCounts[(int)CubeType.Bomb]++;
+                            }
                         }
-                        else if (rand < tSteel) type = CubeType.Steel;
-                        else if (rand < tIce) type = CubeType.Ice;
-                        else if (rand < tShield) type = CubeType.Shield;
-                        else if (rand < tSplit) type = CubeType.Split;
-                        else if (rand < tFrenzy) type = CubeType.Frenzy;
-                        else if (rand < tLaser) type = CubeType.Laser;
-                        else if (rand < tGold) type = CubeType.Gold;
-                        else if (rand < tDrain) type = CubeType.Drain;
-                        else if (rand < tTimeBomb) type = CubeType.TimeBomb;
+                        else if (rand < tSteel) { if (specialCounts[(int)CubeType.Steel] < 3) { type = CubeType.Steel; specialCounts[(int)CubeType.Steel]++; } }
+                        else if (rand < tIce) { if (specialCounts[(int)CubeType.Ice] < 3) { type = CubeType.Ice; specialCounts[(int)CubeType.Ice]++; } }
+                        else if (rand < tShield) { if (specialCounts[(int)CubeType.Shield] < 3) { type = CubeType.Shield; specialCounts[(int)CubeType.Shield]++; } }
+                        else if (rand < tFrenzy) { if (specialCounts[(int)CubeType.Frenzy] < 3) { type = CubeType.Frenzy; specialCounts[(int)CubeType.Frenzy]++; } }
+                        else if (rand < tLaser) { if (specialCounts[(int)CubeType.Laser] < 3) { type = CubeType.Laser; specialCounts[(int)CubeType.Laser]++; } }
+                        else if (rand < tGold) { if (specialCounts[(int)CubeType.Gold] < 3) { type = CubeType.Gold; specialCounts[(int)CubeType.Gold]++; } }
+                        else if (rand < tDrain) { if (specialCounts[(int)CubeType.Drain] < 3) { type = CubeType.Drain; specialCounts[(int)CubeType.Drain]++; } }
+                        else if (rand < tTimeBomb) { if (specialCounts[(int)CubeType.TimeBomb] < 3) { type = CubeType.TimeBomb; specialCounts[(int)CubeType.TimeBomb]++; } }
                     }
 
                     // Resmin iç tarafında kalan siyah veya koyu renkli küplerin aşırı

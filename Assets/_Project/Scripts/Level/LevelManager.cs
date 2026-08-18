@@ -447,7 +447,6 @@ namespace SpinForward.Level
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(15f, 0.5f, 15f);
 
-            // Tumble as they fall.
             var rol = ps.rotationOverLifetime;
             rol.enabled = true;
             rol.z = new ParticleSystem.MinMaxCurve(-6f, 6f);
@@ -471,13 +470,17 @@ namespace SpinForward.Level
             if (state != State.Won)
                 return;
             level++;
-            StartLevel(true); // Next Level'a geçince direkt başla
+            StartLevel(false); // Bekleme ekranına geç
+            if (SpinForward.UI.UIShop.Instance != null)
+                SpinForward.UI.UIShop.Instance.Open();
         }
 
         public void Retry()
         {
             ApplyRetryPenalty();
-            StartLevel(true); // Tekrar denendiğinde de direkt başla
+            StartLevel(false); // Bekleme ekranına geç
+            if (SpinForward.UI.UIShop.Instance != null)
+                SpinForward.UI.UIShop.Instance.Open();
         }
 
         // Failing costs you: lose some money and drop upgrade levels (which also brings

@@ -92,7 +92,11 @@ namespace SpinForward.UI
 
         private void BuildOpenButton(Transform canvas)
         {
-            RectTransform rt = MakeImage(canvas, "GuideButton", accent, new Vector2(-460f, 830f), new Vector2(110f, 110f));
+            // Sol üst köşeye (Level yazısının biraz altına) sabitleyelim
+            RectTransform rt = MakeImage(canvas, "GuideButton", accent, new Vector2(100f, -250f), new Vector2(110f, 110f));
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(0f, 1f);
+            
             Round(rt);
             var btn = rt.gameObject.AddComponent<Button>();
             btn.targetGraphic = rt.GetComponent<Image>();

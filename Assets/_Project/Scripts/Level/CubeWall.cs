@@ -31,12 +31,6 @@ namespace SpinForward.Level
         private int remaining;
         private int totalCubes;
         
-        // Dynamic Movement Variables
-        private bool isMoving;
-        private float moveSpeed;
-        private float moveDistance;
-        private Vector3 initialPosition;
-        private bool alternateRowMovement;
         
         // Physics Fix
         private struct CubeData
@@ -94,7 +88,6 @@ namespace SpinForward.Level
             }
 
             GridShape shape = data != null ? data.shape : GridShape.Square;
-            alternateRowMovement = data != null ? data.alternateRowMovement : false;
 
             // Distance Transform (Depth calculation for health)
             int[,] distanceMap = new int[columns, rows];
@@ -237,11 +230,6 @@ namespace SpinForward.Level
                         
                     cube.Init(type, health);
 
-                    // Moving/breathing walls need a kinematic Rigidbody to slide cheaply;
-                    // static walls stay as plain colliders (no Rigidbody) for performance.
-                    if (data != null && data.isMoving)
-                        cube.MakeMovable();
-
                     // Renk ataması
                     if (type == CubeType.Bomb)
                         cube.SetColor(Color.red);
@@ -296,42 +284,7 @@ namespace SpinForward.Level
                 SpinForward.CameraControl.CameraController.Instance.FrameWall(columns, rows, spacing);
             }
             
-            if (data != null)
-            {
-                isMoving = data.isMoving;
-                moveSpeed = data.moveSpeed;
-                moveDistance = data.moveDistance;
-            }
-            else
-            {
-                isMoving = false;
-            }
-            
-            initialPosition = transform.position;
             transform.localScale = Vector3.one;
-        }
-        
-        private void FixedUpdate()
-        {
-            if (remaining <= 0) return;
-            
-            if (isMoving)
-            {
-                float sineVal = Mathf.Sin(Time.time * moveSpeed);
-
-                for (int i = 0; i < activeCubes.Count; i++)
-                {
-                    CubeData cd = activeCubes[i];
-                    if (cd.cube == null || cd.cube.IsSmashed) continue;
-
-                    float direction = 1f;
-                    if (alternateRowMovement) direction = (cd.rowIndex % 2 == 0) ? 1f : -1f;
-                    float xOffset = sineVal * moveDistance * direction;
-
-                    Vector3 targetPos = initialPosition + cd.baseLocalPos + new Vector3(xOffset, 0f, 0f);
-                    cd.cube.MoveTo(targetPos);
-                }
-            }
         }
 
         // Snaps a color to a coarse grid so many pixels share the exact same color

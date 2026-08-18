@@ -47,9 +47,6 @@ namespace SpinForward.Level
         }
         private System.Collections.Generic.List<CubeData> activeCubes = new System.Collections.Generic.List<CubeData>();
         
-        // Repulsive Breathing Variables
-        private bool isBreathing;
-        private float breathingPushForce;
 
         public void Build(int columns, int rows, LevelData data = null)
         {
@@ -242,7 +239,7 @@ namespace SpinForward.Level
 
                     // Moving/breathing walls need a kinematic Rigidbody to slide cheaply;
                     // static walls stay as plain colliders (no Rigidbody) for performance.
-                    if (data != null && (data.isMoving || data.isBreathing))
+                    if (data != null && data.isMoving)
                         cube.MakeMovable();
 
                     // Renk ataması
@@ -304,80 +301,35 @@ namespace SpinForward.Level
                 isMoving = data.isMoving;
                 moveSpeed = data.moveSpeed;
                 moveDistance = data.moveDistance;
-                
-                isBreathing = data.isBreathing;
-                breathingPushForce = data.breathingPushForce;
             }
             else
             {
                 isMoving = false;
-                isBreathing = false;
             }
             
             initialPosition = transform.position;
             transform.localScale = Vector3.one;
         }
         
-        private void Update()
-        {
-            if (remaining <= 0) return;
-            if (isBreathing)
-            {
-                // Gentle breathing (±7%). ±30% scaled the whole wall so hard it looked
-                // like the camera was zooming in and out.
-                float sineValue = Mathf.Sin(Time.time * moveSpeed);
-                float scalePulse = 1f + sineValue * 0.07f;
-                transform.localScale = Vector3.one * scalePulse;
-            }
-        }
-        
         private void FixedUpdate()
         {
             if (remaining <= 0) return;
             
-            if (isMoving || isBreathing)
+            if (isMoving)
             {
                 float sineVal = Mathf.Sin(Time.time * moveSpeed);
-                Vector3 currentScale = transform.localScale;
-                
+
                 for (int i = 0; i < activeCubes.Count; i++)
                 {
                     CubeData cd = activeCubes[i];
                     if (cd.cube == null || cd.cube.IsSmashed) continue;
-                    
-                    float xOffset = 0f;
-                    if (isMoving)
-                    {
-                        float direction = 1f;
-                        if (alternateRowMovement) direction = (cd.rowIndex % 2 == 0) ? 1f : -1f;
-                        xOffset = sineVal * moveDistance * direction;
-                    }
-                    
-                    Vector3 scaledLocalPos = new Vector3(cd.baseLocalPos.x * currentScale.x, cd.baseLocalPos.y * currentScale.y, cd.baseLocalPos.z * currentScale.z);
-                    Vector3 offsetVec = new Vector3(xOffset * currentScale.x, 0, 0);
-                    
-                    Vector3 targetPos = initialPosition + scaledLocalPos + offsetVec;
+
+                    float direction = 1f;
+                    if (alternateRowMovement) direction = (cd.rowIndex % 2 == 0) ? 1f : -1f;
+                    float xOffset = sineVal * moveDistance * direction;
+
+                    Vector3 targetPos = initialPosition + cd.baseLocalPos + new Vector3(xOffset, 0f, 0f);
                     cd.cube.MoveTo(targetPos);
-                }
-            }
-            
-            if (isBreathing)
-            {
-                if (Mathf.Cos(Time.time * moveSpeed) > 0.3f)
-                {
-                    if (SpinForward.Player.SpinnerController.Instance != null)
-                    {
-                        Rigidbody spinnerRb = SpinForward.Player.SpinnerController.Instance.GetComponent<Rigidbody>();
-                        if (spinnerRb != null)
-                        {
-                            Vector3 toSpinner = spinnerRb.position - transform.position;
-                            if (toSpinner.magnitude < (5f * transform.localScale.x))
-                            {
-                                Vector3 pushDir = toSpinner.normalized;
-                                spinnerRb.AddForce(pushDir * (breathingPushForce * 10f) * Time.fixedDeltaTime, ForceMode.Force);
-                            }
-                        }
-                    }
                 }
             }
         }

@@ -10,6 +10,9 @@ namespace SpinForward.Level
         public static LevelManager Instance { get; private set; }
         public bool IsPlaying => state == State.Playing;
         public bool IsWaitingToStart => state == State.WaitingToStart;
+        public bool IsWon => state == State.Won;
+        public bool IsLost => state == State.Lost;
+        public int CurrentLevel => level;
 
         private enum State { WaitingToStart, Playing, Won, Lost }
 

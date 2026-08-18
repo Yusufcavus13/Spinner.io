@@ -86,6 +86,52 @@ namespace SpinForward.Editor
                 done++;
             }
 
+            // Also style the win/lose panel buttons (Next Level = green, Retry = red),
+            // found by the method they call on click or by their GameObject name.
+            foreach (Button btn in Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                string path = null;
+                if (ButtonCalls(btn, "NextLevel")) path = Green;
+                else if (ButtonCalls(btn, "Retry")) path = Red;
+                else
+                {
+                    string n = btn.gameObject.name.ToLowerInvariant();
+                    if (n.Contains("next")) path = Green;
+                    else if (n.Contains("retry") || n.Contains("tekrar") || n.Contains("again")) path = Red;
+                }
+                if (path == null)
+                    continue;
+
+                Sprite sprite = LoadAsSlicedSprite(path);
+                Image img = btn.image != null ? btn.image : btn.GetComponent<Image>();
+                if (sprite == null || img == null)
+                    continue;
+
+                Undo.RecordObject(img, "Beautify Button");
+                img.sprite = sprite;
+                img.type = Image.Type.Sliced;
+                img.color = Color.white;
+                img.pixelsPerUnitMultiplier = 1f;
+                EditorUtility.SetDirty(img);
+
+                Undo.RecordObject(btn, "Beautify Button");
+                btn.transition = Selectable.Transition.ColorTint;
+                var cb = btn.colors;
+                cb.normalColor = Color.white;
+                cb.highlightedColor = new Color(0.92f, 0.92f, 0.92f);
+                cb.pressedColor = new Color(0.78f, 0.78f, 0.78f);
+                cb.disabledColor = new Color(0.72f, 0.72f, 0.72f, 1f);
+                cb.fadeDuration = 0.08f;
+                btn.colors = cb;
+                EditorUtility.SetDirty(btn);
+
+                TMP_Text label = btn.GetComponentInChildren<TMP_Text>(true);
+                if (label != null)
+                    StyleSingleLabel(label);
+
+                done++;
+            }
+
             if (done > 0)
             {
                 Scene scene = SceneManager.GetActiveScene();
@@ -121,6 +167,38 @@ namespace SpinForward.Editor
             tmp.fontSizeMin = 10f;
             tmp.fontSizeMax = 48f;
 
+            EditorUtility.SetDirty(tmp);
+            EditorUtility.SetDirty(rt);
+        }
+
+        // True if the button's OnClick has a persistent listener calling the given method.
+        private static bool ButtonCalls(Button btn, string methodName)
+        {
+            if (btn == null)
+                return false;
+            for (int i = 0; i < btn.onClick.GetPersistentEventCount(); i++)
+                if (btn.onClick.GetPersistentMethodName(i) == methodName)
+                    return true;
+            return false;
+        }
+
+        // Styles a single button label (Next/Retry) to fill the button, white and bold.
+        private static void StyleSingleLabel(TMP_Text tmp)
+        {
+            RectTransform rt = tmp.rectTransform;
+            Undo.RecordObject(tmp, "Style Label");
+            Undo.RecordObject(rt, "Style Label");
+            rt.SetAsLastSibling();
+            rt.anchorMin = new Vector2(0.1f, 0.18f);
+            rt.anchorMax = new Vector2(0.9f, 0.82f);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.fontStyle |= FontStyles.Bold;
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin = 12f;
+            tmp.fontSizeMax = 60f;
             EditorUtility.SetDirty(tmp);
             EditorUtility.SetDirty(rt);
         }

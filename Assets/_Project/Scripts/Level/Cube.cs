@@ -30,8 +30,10 @@ namespace SpinForward.Level
         [SerializeField] private float drainAmount = 10f;
 
         [Header("Time Bomb Cube")]
-        [Tooltip("Seconds before an uncleared time-bomb cube detonates on its own.")]
+        [Tooltip("Seconds before an ARMED time-bomb cube detonates on its own.")]
         [SerializeField] private float timeBombDuration = 6f;
+        [Tooltip("The spinner must come this close before a time-bomb cube ARMS and starts counting down.")]
+        [SerializeField] private float timeBombArmDistance = 4.5f;
 
         public event System.Action<Cube> Smashed;
         public static event System.Action<Vector3> AnyCubeSmashed;
@@ -91,25 +93,42 @@ namespace SpinForward.Level
                 SetGlowColor(new Color(0.72f, 0.1f, 0.95f)); // parlayan mor tuzak - net ayırt edilir
             else if (myType == CubeType.TimeBomb)
             {
-                SetColor(new Color(1f, 0.6f, 0.05f)); // turuncu; coroutine kırmızıya doğru nabız atacak
+                SetGlowColor(new Color(1f, 0.55f, 0.05f)); // dormant: glowing amber, clearly distinct
                 StartCoroutine(TimeBombRoutine());
             }
         }
 
-        // Counts down while pulsing faster; if not cleared in time it detonates like a bomb.
+        // Stays DORMANT until the spinner comes close; only then does it arm and count down
+        // (so far-off bombs don't all detonate at once at level start). Clear it in time = safe.
         private System.Collections.IEnumerator TimeBombRoutine()
         {
             if (rend == null)
                 rend = GetComponent<Renderer>();
-            Material mat = rend != null ? rend.material : null; // own instance so pulsing doesn't pool
 
+            while (!isSmashed)
+            {
+                var sc = SpinForward.Player.SpinnerController.Instance;
+                if (sc != null)
+                {
+                    Vector3 d = sc.transform.position - transform.position;
+                    d.y = 0f;
+                    if (d.magnitude <= timeBombArmDistance)
+                        break; // spinner is near - arm it
+                }
+                yield return null;
+            }
+            if (isSmashed)
+                yield break;
+
+            // Armed: pulse red, faster and faster, then detonate.
+            Material mat = rend != null ? rend.material : null; // own instance so pulsing doesn't pool
             float t = timeBombDuration;
             while (t > 0f && !isSmashed)
             {
                 t -= Time.deltaTime;
                 if (mat != null)
                 {
-                    float k = 1f - Mathf.Clamp01(t / timeBombDuration);       // 0 -> 1 as it runs out
+                    float k = 1f - Mathf.Clamp01(t / timeBombDuration);
                     float pulse = Mathf.Abs(Mathf.Sin(Time.time * Mathf.Lerp(3f, 16f, k)));
                     mat.SetColor(BaseColorId, Color.Lerp(new Color(1f, 0.6f, 0.05f), new Color(1f, 0.05f, 0.05f), pulse));
                 }
@@ -118,7 +137,7 @@ namespace SpinForward.Level
 
             if (!isSmashed)
             {
-                // Time's up: it blows on its own (clears neighbors, and hurts the spinner if near).
+                // Time's up: it blows on its own (clears neighbors, hurts the spinner if near).
                 Explode();
                 Shatter(transform.position);
             }

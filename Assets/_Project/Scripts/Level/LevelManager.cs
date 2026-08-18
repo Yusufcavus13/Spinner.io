@@ -244,7 +244,7 @@ namespace SpinForward.Level
             if (state == State.WaitingToStart)
             {
                 // While the shop is open, ignore taps so buying doesn't start the game.
-                if (!SpinForward.UI.UIShop.IsOpen &&
+                if (!SpinForward.UI.UIShop.IsOpen && !SpinForward.UI.UICubeGuide.IsOpen &&
                     (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)))
                 {
                     BeginPlaying();

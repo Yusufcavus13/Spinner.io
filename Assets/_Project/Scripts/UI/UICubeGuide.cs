@@ -92,7 +92,7 @@ namespace SpinForward.UI
 
         private void BuildOpenButton(Transform canvas)
         {
-            RectTransform rt = MakeImage(canvas, "GuideButton", accent, new Vector2(0f, 1f), new Vector2(110f, -110f), new Vector2(110f, 110f));
+            RectTransform rt = MakeImage(canvas, "GuideButton", accent, new Vector2(-460f, 830f), new Vector2(110f, 110f));
             Round(rt);
             var btn = rt.gameObject.AddComponent<Button>();
             btn.targetGraphic = rt.GetComponent<Image>();

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Split, Frenzy, Laser, Gold }
+    public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Split, Frenzy, Laser, Gold, Drain }
 
     public class Cube : MonoBehaviour
     {
@@ -20,6 +20,14 @@ namespace SpinForward.Level
         [SerializeField] private int explosionDamage = 5;
         [Tooltip("Physical blast force applied to loose debris when a bomb explodes.")]
         [SerializeField] private float explosionForce = 12f;
+        [Tooltip("Energy the spinner loses if caught in a bomb blast.")]
+        [SerializeField] private float bombEnergyPenalty = 12f;
+        [Tooltip("How hard the spinner is knocked back by a bomb blast.")]
+        [SerializeField] private float bombKnockback = 7f;
+
+        [Header("Drain (Trap) Cube")]
+        [Tooltip("Energy the glowing drain cube saps when smashed.")]
+        [SerializeField] private float drainAmount = 10f;
 
         public event System.Action<Cube> Smashed;
         public static event System.Action<Vector3> AnyCubeSmashed;
@@ -75,6 +83,8 @@ namespace SpinForward.Level
                 SetColor(new Color(1f, 0.5f, 0f)); 
             else if (myType == CubeType.Frenzy)
                 SetColor(Color.yellow); // Frenzy = Golden/Yellow
+            else if (myType == CubeType.Drain)
+                SetGlowColor(new Color(0.72f, 0.1f, 0.95f)); // parlayan mor tuzak - net ayırt edilir
         }
         
         public void MoveTo(Vector3 targetPos)
@@ -99,6 +109,27 @@ namespace SpinForward.Level
                 mat = new Material(rend.sharedMaterial);
                 mat.SetColor(BaseColorId, color);
                 ColorMaterials[color] = mat;
+            }
+            rend.sharedMaterial = mat;
+        }
+
+        private static readonly Dictionary<Color, Material> GlowMaterials = new Dictionary<Color, Material>();
+
+        // Like SetColor but EMISSIVE (the cube glows) - used for the distinct drain trap cube.
+        public void SetGlowColor(Color color)
+        {
+            if (rend == null)
+                rend = GetComponent<Renderer>();
+            if (rend == null)
+                return;
+
+            if (!GlowMaterials.TryGetValue(color, out Material mat))
+            {
+                mat = new Material(rend.sharedMaterial);
+                mat.SetColor(BaseColorId, color);
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", color * 2.5f);
+                GlowMaterials[color] = mat;
             }
             rend.sharedMaterial = mat;
         }
@@ -216,6 +247,10 @@ namespace SpinForward.Level
                     if (SpinForward.UI.FloatingTextManager.Instance != null)
                         SpinForward.UI.FloatingTextManager.Instance.ShowDamage(bonusGold, transform.position + Vector3.up); // Yazı azıcık yukarıda çıksın
                 }
+                else if (myType == CubeType.Drain && LevelManager.Instance != null)
+                {
+                    LevelManager.Instance.DrainEnergy(drainAmount); // tuzak küp: enerji emer
+                }
             }
         }
 
@@ -271,6 +306,19 @@ namespace SpinForward.Level
                 Rigidbody body = c.attachedRigidbody;
                 if (body != null && !body.isKinematic)
                     body.AddExplosionForce(explosionForce, transform.position, explosionRadius, 0.5f, ForceMode.Impulse);
+            }
+
+            // BOMB RISK: if the spinner is caught in the blast, it loses energy and is knocked back.
+            if (SpinForward.Player.SpinnerController.Instance != null)
+            {
+                Vector3 toSpinner = SpinForward.Player.SpinnerController.Instance.transform.position - transform.position;
+                toSpinner.y = 0f;
+                if (toSpinner.magnitude < explosionRadius)
+                {
+                    if (LevelManager.Instance != null)
+                        LevelManager.Instance.DrainEnergy(bombEnergyPenalty);
+                    SpinForward.Player.SpinnerController.Instance.Knockback(toSpinner.normalized, bombKnockback);
+                }
             }
         }
 

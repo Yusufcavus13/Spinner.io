@@ -209,6 +209,7 @@ namespace SpinForward.Level
 
                         float tLaser = tFrenzy + (data != null ? data.laserCubeChance : 0f);
                         float tGold = tLaser + (data != null ? data.goldCubeChance : 0f);
+                        float tDrain = tGold + (data != null ? data.drainCubeChance : 0f);
 
                         if (rand < tBomb && spawnedBombs < data.maxBombs)
                         {
@@ -223,6 +224,7 @@ namespace SpinForward.Level
                         else if (rand < tFrenzy) type = CubeType.Frenzy;
                         else if (rand < tLaser) type = CubeType.Laser;
                         else if (rand < tGold) type = CubeType.Gold;
+                        else if (rand < tDrain) type = CubeType.Drain;
                     }
 
                     // Resmin iç tarafında kalan siyah veya koyu renkli küplerin aşırı
@@ -247,7 +249,8 @@ namespace SpinForward.Level
                             cube.SetColor(ColorFor(c, r, columns, rows));
                     }
 
-                    if (type != CubeType.Steel)
+                    // Steel and Drain (trap) cubes are optional - not required to clear the level.
+                    if (type != CubeType.Steel && type != CubeType.Drain)
                     {
                         cube.Smashed += OnCubeSmashed;
                         remaining++;
@@ -258,26 +261,6 @@ namespace SpinForward.Level
             }
             
             totalCubes = remaining;
-
-            // Spawn Vortex Hazards outside the grid
-            if (data != null && data.vortexCount > 0)
-            {
-                for (int i = 0; i < data.vortexCount; i++)
-                {
-                    GameObject vObj = new GameObject("VortexHazard");
-                    vObj.transform.SetParent(transform);
-                    
-                    // Rastgele sol veya sağ tarafı seç
-                    float side = (Random.value > 0.5f) ? 1f : -1f;
-                    // Grid'in genişliğine göre dışarıda bir x pozisyonu
-                    float x = side * (columns * spacing * 0.5f + Random.Range(2f, 4f));
-                    // Grid'in uzunluğuna (Z ekseni) denk gelen rastgele bir z pozisyonu
-                    float z = Random.Range(0f, rows * spacing);
-                    
-                    vObj.transform.position = transform.position + new Vector3(x, groundHeight, z);
-                    vObj.AddComponent<VortexHazard>();
-                }
-            }
 
             if (SpinForward.CameraControl.CameraController.Instance != null)
             {

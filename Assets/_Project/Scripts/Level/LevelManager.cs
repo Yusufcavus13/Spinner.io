@@ -193,6 +193,14 @@ namespace SpinForward.Level
                 UpgradeSystem.Instance.Energy.Changed -= OnEnergyUpgraded;
         }
 
+        // Drain (trap) cubes and bomb blasts sap energy directly.
+        public void DrainEnergy(float amount)
+        {
+            if (state != State.Playing)
+                return;
+            currentEnergy = Mathf.Max(0f, currentEnergy - amount);
+        }
+
         // Buying the Energy upgrade raises max energy - top up current energy by the gained
         // amount so the right-side bar visibly jumps up the moment you press the button.
         private void OnEnergyUpgraded()

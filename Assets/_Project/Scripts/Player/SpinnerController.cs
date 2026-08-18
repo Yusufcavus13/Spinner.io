@@ -239,6 +239,14 @@ namespace SpinForward.Player
             if (grindPushBack.magnitude > resistance) grindPushBack = Vector3.ClampMagnitude(grindPushBack, resistance);
         }
 
+        // A one-off shove (e.g. a bomb blast). Reuses the push-back channel so it actually moves.
+        public void Knockback(Vector3 dir, float force)
+        {
+            dir.y = 0f;
+            grindPushBack += dir.normalized * force;
+            grindPushBack = Vector3.ClampMagnitude(grindPushBack, force);
+        }
+
         public void ActivateFrenzy(float duration)
         {
             frenzyTimer = duration;

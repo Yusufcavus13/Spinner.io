@@ -221,6 +221,15 @@ namespace SpinForward.Level
 
         private void Update()
         {
+#if UNITY_EDITOR
+            // DEBUG (editor/simulator only - stripped from real builds): press L to instantly
+            // win the level so the win/confetti flow can be tested without clearing every cube.
+            if (Input.GetKeyDown(KeyCode.L) && state == State.Playing)
+            {
+                Win();
+                return;
+            }
+#endif
             if (state == State.WaitingToStart)
             {
                 // While the shop is open, ignore taps so buying doesn't start the game.
@@ -365,11 +374,12 @@ namespace SpinForward.Level
             PlayConfetti();
         }
 
-        // Colorful confetti burst on level complete. Uses unscaled time so it animates
-        // even though the game is frozen behind the win panel.
+        // Rich confetti shower on level complete: rectangular tumbling pieces in vibrant
+        // colors, several bursts for a sustained rain, floating down slowly. Unscaled time
+        // so it animates even though the game is frozen behind the win panel.
         private void PlayConfetti()
         {
-            Vector3 pos = (spinner != null ? spinner.position : Vector3.zero) + Vector3.up * 8f;
+            Vector3 pos = (spinner != null ? spinner.position : Vector3.zero) + Vector3.up * 9f;
             var go = new GameObject("WinConfetti");
             go.transform.position = pos;
 
@@ -378,14 +388,18 @@ namespace SpinForward.Level
 
             var main = ps.main;
             main.loop = false;
-            main.duration = 1.5f;
-            main.startLifetime = 3.5f;
-            main.startSpeed = new ParticleSystem.MinMaxCurve(2f, 7f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.15f, 0.35f);
-            main.startRotation = new ParticleSystem.MinMaxCurve(0f, 6.28f);
-            main.gravityModifier = 1.1f;
-            main.maxParticles = 300;
+            main.duration = 2f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2.5f, 4.5f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1f, 5f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, 6.283f);
+            main.gravityModifier = 0.55f;     // float down slowly
+            main.maxParticles = 700;
             main.useUnscaledTime = true;
+            // Rectangular "confetti strip" pieces.
+            main.startSize3D = true;
+            main.startSizeX = new ParticleSystem.MinMaxCurve(0.09f, 0.17f);
+            main.startSizeY = new ParticleSystem.MinMaxCurve(0.24f, 0.46f);
+            main.startSizeZ = new ParticleSystem.MinMaxCurve(0.09f, 0.17f);
 
             var gradient = new Gradient();
             gradient.SetKeys(
@@ -401,15 +415,26 @@ namespace SpinForward.Level
 
             var emission = ps.emission;
             emission.rateOverTime = 0f;
-            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 220) });
+            emission.SetBursts(new[]
+            {
+                new ParticleSystem.Burst(0.0f, 220),
+                new ParticleSystem.Burst(0.3f, 150),
+                new ParticleSystem.Burst(0.6f, 130),
+                new ParticleSystem.Burst(0.95f, 110)
+            });
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(12f, 0.5f, 12f);
+            shape.scale = new Vector3(15f, 0.5f, 15f);
+
+            // Tumble as they fall.
+            var rol = ps.rotationOverLifetime;
+            rol.enabled = true;
+            rol.z = new ParticleSystem.MinMaxCurve(-6f, 6f);
 
             ps.GetComponent<ParticleSystemRenderer>().material = new Material(Shader.Find("Sprites/Default"));
             ps.Play();
-            Destroy(go, 6f);
+            Destroy(go, 8f);
         }
 
         private void Lose()

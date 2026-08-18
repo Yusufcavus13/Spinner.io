@@ -207,9 +207,10 @@ namespace SpinForward.Level
 
                         float tFrenzy = tSplit + (data != null ? data.frenzyCubeChance : 0f);
 
-                        float tLaser = tFrenzy + (data != null ? data.laserCubeChance : 0f);
+                        float tLaser = tFrenzy + (data != null ? Mathf.Max(data.laserCubeChance, 0.015f) : 0f); // haç temizleyici hep biraz cikar
                         float tGold = tLaser + (data != null ? data.goldCubeChance : 0f);
                         float tDrain = tGold + (data != null ? data.drainCubeChance : 0f);
+                        float tTimeBomb = tDrain + (data != null ? data.timeBombCubeChance : 0f);
 
                         if (rand < tBomb && spawnedBombs < data.maxBombs)
                         {
@@ -225,6 +226,7 @@ namespace SpinForward.Level
                         else if (rand < tLaser) type = CubeType.Laser;
                         else if (rand < tGold) type = CubeType.Gold;
                         else if (rand < tDrain) type = CubeType.Drain;
+                        else if (rand < tTimeBomb) type = CubeType.TimeBomb;
                     }
 
                     // Resmin iç tarafında kalan siyah veya koyu renkli küplerin aşırı
@@ -238,7 +240,7 @@ namespace SpinForward.Level
                     else if (type == CubeType.Steel)
                         cube.SetColor(new Color(0.32f, 0.35f, 0.42f)); // metalik gri
                     else if (type == CubeType.Laser)
-                        cube.SetColor(Color.cyan);
+                        cube.SetGlowColor(Color.cyan); // parlayan camgöbeği - avantaj (haç temizleyici) küpü
                     else if (type == CubeType.Gold)
                         cube.SetColor(new Color(1f, 0.84f, 0f)); // Gold (Altın sarısı)
                     else if (type == CubeType.Normal)

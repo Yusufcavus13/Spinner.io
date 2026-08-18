@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SpinForward.Level
 {
-    public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Split, Frenzy, Laser, Gold, Drain }
+    public enum CubeType { Normal, Bomb, Steel, Ice, Shield, Split, Frenzy, Laser, Gold, Drain, TimeBomb }
 
     public class Cube : MonoBehaviour
     {
@@ -28,6 +28,10 @@ namespace SpinForward.Level
         [Header("Drain (Trap) Cube")]
         [Tooltip("Energy the glowing drain cube saps when smashed.")]
         [SerializeField] private float drainAmount = 10f;
+
+        [Header("Time Bomb Cube")]
+        [Tooltip("Seconds before an uncleared time-bomb cube detonates on its own.")]
+        [SerializeField] private float timeBombDuration = 6f;
 
         public event System.Action<Cube> Smashed;
         public static event System.Action<Vector3> AnyCubeSmashed;
@@ -85,6 +89,39 @@ namespace SpinForward.Level
                 SetColor(Color.yellow); // Frenzy = Golden/Yellow
             else if (myType == CubeType.Drain)
                 SetGlowColor(new Color(0.72f, 0.1f, 0.95f)); // parlayan mor tuzak - net ayırt edilir
+            else if (myType == CubeType.TimeBomb)
+            {
+                SetColor(new Color(1f, 0.6f, 0.05f)); // turuncu; coroutine kırmızıya doğru nabız atacak
+                StartCoroutine(TimeBombRoutine());
+            }
+        }
+
+        // Counts down while pulsing faster; if not cleared in time it detonates like a bomb.
+        private System.Collections.IEnumerator TimeBombRoutine()
+        {
+            if (rend == null)
+                rend = GetComponent<Renderer>();
+            Material mat = rend != null ? rend.material : null; // own instance so pulsing doesn't pool
+
+            float t = timeBombDuration;
+            while (t > 0f && !isSmashed)
+            {
+                t -= Time.deltaTime;
+                if (mat != null)
+                {
+                    float k = 1f - Mathf.Clamp01(t / timeBombDuration);       // 0 -> 1 as it runs out
+                    float pulse = Mathf.Abs(Mathf.Sin(Time.time * Mathf.Lerp(3f, 16f, k)));
+                    mat.SetColor(BaseColorId, Color.Lerp(new Color(1f, 0.6f, 0.05f), new Color(1f, 0.05f, 0.05f), pulse));
+                }
+                yield return null;
+            }
+
+            if (!isSmashed)
+            {
+                // Time's up: it blows on its own (clears neighbors, and hurts the spinner if near).
+                Explode();
+                Shatter(transform.position);
+            }
         }
         
         public void MoveTo(Vector3 targetPos)

@@ -395,46 +395,16 @@ namespace SpinForward.Level
             }
         }
 
-        // Tüm kırılma partikülleri için TEK paylaşılan materyal. Bir kez oluşturulur;
-        // eskiden her küp kırılışında Shader.Find + new Material çağrılıyordu (GC spike/takılma).
-        private static Material _shatterMat;
-        private static Material ShatterMaterial
-        {
-            get
-            {
-                if (_shatterMat == null)
-                    _shatterMat = new Material(Shader.Find("Sprites/Default"));
-                return _shatterMat;
-            }
-        }
-
         private void Shatter(Vector3 hitFrom)
         {
             isSmashed = true;
 
-            // Efekt (Particle) oluştur
-            GameObject psObj = new GameObject("CubeShatterEffect");
-            psObj.transform.position = transform.position;
-            ParticleSystem ps = psObj.AddComponent<ParticleSystem>();
-            
-            // Ayarlar yapılırken oynatılmasını durdur
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-            var main = ps.main;
-            main.duration = 1f;
-            main.startLifetime = 0.4f; // 1 saniyeden 0.4'e düşürüldü
-            main.startSpeed = 8f;
-            main.startSize = 0.3f;
-            main.startColor = (rend != null) ? rend.sharedMaterial.color : Color.white;
-            var emission = ps.emission;
-            emission.rateOverTime = 0;
-            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 4, 8) }); // Partikül sayısı azaltıldı
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Sphere;
-            var renderer = ps.GetComponent<ParticleSystemRenderer>();
-            renderer.sharedMaterial = ShatterMaterial; // paylaşılan tek materyal (her kırılmada Shader.Find + alloc YOK)
-            ps.Play();
-            Destroy(psObj, 0.5f); // 2 saniye yerine 0.5 saniyede yok et
+            // Efekt (Particle) havuzdan al (GC ve Instantiation yükünü ortadan kaldırır)
+            Color pColor = (rend != null) ? rend.sharedMaterial.color : Color.white;
+            if (SpinForward.Core.ParticlePool.Instance != null)
+            {
+                SpinForward.Core.ParticlePool.Instance.GetParticle(transform.position, pColor);
+            }
 
             // Frozen cubes carry no Rigidbody; add one now so the debris can fly.
             if (rb == null)

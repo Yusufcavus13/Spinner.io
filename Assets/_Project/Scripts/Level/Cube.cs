@@ -214,6 +214,14 @@ namespace SpinForward.Level
 
             lastDamageTime = Time.time;
 
+            // Spinner'a darbe geri bildirimi: görsel 'punch' + kısa ileri direnç.
+            // Sert küplerde daha güçlü (duvara toslama hissi), normalde hafif.
+            if (SpinForward.Player.SpinnerController.Instance != null)
+            {
+                float strength = currentHealth > 4 ? 1.4f : 0.7f;
+                SpinForward.Player.SpinnerController.Instance.OnImpact(transform.position, strength);
+            }
+
             // Tough cubes just WOBBLE on hit - no push-back (that shoved the spinner around).
             if (currentHealth > 4)
             {
@@ -387,6 +395,19 @@ namespace SpinForward.Level
             }
         }
 
+        // Tüm kırılma partikülleri için TEK paylaşılan materyal. Bir kez oluşturulur;
+        // eskiden her küp kırılışında Shader.Find + new Material çağrılıyordu (GC spike/takılma).
+        private static Material _shatterMat;
+        private static Material ShatterMaterial
+        {
+            get
+            {
+                if (_shatterMat == null)
+                    _shatterMat = new Material(Shader.Find("Sprites/Default"));
+                return _shatterMat;
+            }
+        }
+
         private void Shatter(Vector3 hitFrom)
         {
             isSmashed = true;
@@ -411,7 +432,7 @@ namespace SpinForward.Level
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
             var renderer = ps.GetComponent<ParticleSystemRenderer>();
-            renderer.material = new Material(Shader.Find("Sprites/Default"));
+            renderer.sharedMaterial = ShatterMaterial; // paylaşılan tek materyal (her kırılmada Shader.Find + alloc YOK)
             ps.Play();
             Destroy(psObj, 0.5f); // 2 saniye yerine 0.5 saniyede yok et
 

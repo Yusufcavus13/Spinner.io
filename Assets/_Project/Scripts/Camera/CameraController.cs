@@ -69,10 +69,10 @@ namespace SpinForward.CameraControl
 
         private void OnCubeSmashed(Vector3 pos)
         {
-            // Normal küp kırılmasında çok hafif bir titreşim
+            // Normal küp kırılmasında hissedilir ama rahatsız etmeyen bir titreşim.
             if (impulseSource != null)
             {
-                impulseSource.GenerateImpulseWithVelocity(Random.insideUnitSphere * 0.1f);
+                impulseSource.GenerateImpulseWithVelocity(Random.insideUnitSphere * 0.3f);
             }
         }
         

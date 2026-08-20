@@ -30,6 +30,20 @@ namespace SpinForward.Player
         [SerializeField] private float maxLeanAngle = 8f;
         [SerializeField] private float leanSmooth = 6f;
 
+        [Header("Impact Feel (küpe çarpma hissi)")]
+        [Tooltip("Küpe çarpınca görselin ne kadar 'ezilip' geri yaylanacağı (0.14 = %14).")]
+        [SerializeField] private float impactSquash = 0.14f;
+        [Tooltip("Ezilmenin ne kadar hızlı düzeleceği. Büyük = daha snappy toparlanma.")]
+        [SerializeField] private float impactRecover = 9f;
+        [Tooltip("Küpe temas edildiğinde ileri hızın ne kadar yavaşlayacağı (direnç hissi, 0.18 = %18).")]
+        [SerializeField] private float impactSpeedDip = 0.18f;
+        [Tooltip("Temas kesilince direncin ne kadar hızlı kaybolacağı. Büyük = hızlı toparlanma.")]
+        [SerializeField] private float impactResistDecay = 4f;
+
+        private float impactPunch = 0f;          // 0..1, o anki 'ezilme' miktarı
+        private Vector3 baseVisualScale = Vector3.one;
+        private float contactResist = 0f;        // 0..1, küpe temas direnci (yumuşak yavaşlama)
+
         // Debuff ve Buff mekanikleri
         private float iceDebuffTimer = 0f;
         private Renderer visualRenderer;
@@ -89,6 +103,7 @@ namespace SpinForward.Player
             if (visual != null)
             {
                 visualBaseRot = visual.localRotation; // preserve the model's resting orientation
+                baseVisualScale = visual.localScale;  // remember the resting scale for the impact 'punch'
                 visualRenderer = visual.GetComponentInChildren<Renderer>();
                 if (visualRenderer != null)
                 {
@@ -187,8 +202,14 @@ namespace SpinForward.Player
             }
             currentLean = Quaternion.Slerp(currentLean, targetLean, Time.deltaTime * leanSmooth);
 
+            // Impact 'punch': küpe çarpınca görsel hızla ezilir, sonra yayına geri döner.
+            impactPunch = Mathf.MoveTowards(impactPunch, 0f, Time.deltaTime * impactRecover);
+
             if (visual != null)
+            {
                 visual.localRotation = currentLean * Quaternion.AngleAxis(spinAngle, Vector3.up) * visualBaseRot;
+                visual.localScale = baseVisualScale * (1f - impactPunch * impactSquash);
+            }
         }
 
         private void FixedUpdate()
@@ -224,7 +245,14 @@ namespace SpinForward.Player
             Vector3 vel = rb.linearVelocity;
             Vector3 horizNow = new Vector3(vel.x, 0f, vel.z);
             Vector3 horizNext = Vector3.MoveTowards(horizNow, targetVel, acceleration * Time.fixedDeltaTime);
-            
+
+            // Küpe temas direnci: ileri gidişi YUMUŞAKÇA yavaşlatır (ani sıçrama yok -> judder yok).
+            if (contactResist > 0f)
+            {
+                horizNext *= (1f - contactResist);
+                contactResist = Mathf.MoveTowards(contactResist, 0f, impactResistDecay * Time.fixedDeltaTime);
+            }
+
             // Fiziksel Direnç (Push-back) eklentisi
             horizNext += grindPushBack;
             grindPushBack = Vector3.Lerp(grindPushBack, Vector3.zero, Time.fixedDeltaTime * 10f); // Hızlıca sönümlenir
@@ -237,6 +265,24 @@ namespace SpinForward.Player
             if (IsFrenzyActive) return; // Frenzy modunda direnç hissetmez, yarıp geçer!
             grindPushBack += direction * resistance * 0.2f;
             if (grindPushBack.magnitude > resistance) grindPushBack = Vector3.ClampMagnitude(grindPushBack, resistance);
+        }
+
+        /// <summary>Bir küpe her çarpışta çağrılır. Görsel 'punch' verir ve ileri hızı bir an
+        /// düşürür (direnç hissi). Steering'i BOZMAZ: yana/geri itmez, sadece ileri gidişi
+        /// kısa süre yavaşlatır ve FixedUpdate kendini toplar. Frenzy/Fever'da yarıp geçer.</summary>
+        public void OnImpact(Vector3 cubeWorldPos, float strength = 1f)
+        {
+            impactPunch = Mathf.Min(1f, impactPunch + strength);
+
+            bool plow = IsFrenzyActive ||
+                (SpinForward.Core.ComboManager.Instance != null && SpinForward.Core.ComboManager.Instance.IsFeverActive);
+            if (plow)
+                return;
+
+            // Sert bir hız kesme (velocity teleport) yerine YUMUŞAK bir direnç biriktir.
+            // FixedUpdate bunu sürekli uygular ve söndürür -> judder/kekeleme olmaz.
+            float dip = Mathf.Clamp01(impactSpeedDip * strength);
+            contactResist = Mathf.Max(contactResist, dip);
         }
 
         // A one-off shove (e.g. a bomb blast). Reuses the push-back channel so it actually moves.

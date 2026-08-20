@@ -26,19 +26,16 @@ namespace SpinForward.UI
         [SerializeField] private Color equippedColor = new Color(1f, 0.72f, 0.16f);
         [SerializeField] private Color lockedColor = new Color(0.4f, 0.42f, 0.5f);
 
-        [SerializeField] private Sprite rounded;
-        [SerializeField] private Sprite circle;
-        [SerializeField] private Sprite[] shapeSprites; // indexed by SpinnerShape
-        [SerializeField] private GameObject shopRoot;
-        [SerializeField] private GameObject openButton;
-        [SerializeField] private TMP_Text moneyLabel;
-        [SerializeField] private TMP_Text playLabel;
-        [SerializeField] private Button playButton;
-        [SerializeField] private Button closeButton;
-        [SerializeField] private List<Card> cards = new List<Card>();
+        private Sprite rounded;
+        private Sprite circle;
+        private Sprite[] shapeSprites; // indexed by SpinnerShape
+        private GameObject shopRoot;
+        private GameObject openButton;
+        private TMP_Text moneyLabel;
+        private TMP_Text playLabel;
+        private readonly List<Card> cards = new List<Card>();
 
-        [System.Serializable]
-        public class Card
+        private class Card
         {
             public int index;
             public Image preview;
@@ -70,82 +67,21 @@ namespace SpinForward.UI
             HideLeftoverMarketButton();
             EnsureSkinManager();
             EnsureEventSystem();
-
-            if (shopRoot != null)
+            rounded = MakeRoundedSprite(24);
+            circle = MakeCircleSprite(96);
+            shapeSprites = new[]
             {
-                // UI sahnede zaten var — sadece butonları bağla, sprite'ları ata
-                WireSceneUI();
-            }
-            else
-            {
-                // UI yok — koddan oluştur (orijinal davranış)
-                rounded = MakeRoundedSprite(24);
-                circle = MakeCircleSprite(96);
-                shapeSprites = new[]
-                {
-                    circle,                                  // Disc
-                    MakeToothedSprite(96, 16, 0.78f, true),  // Saw
-                    MakeToothedSprite(96, 5, 0.42f, true),   // Star
-                    MakeToothedSprite(96, 10, 0.72f, false)  // Gear
-                };
+                circle,                                  // Disc
+                MakeToothedSprite(96, 16, 0.78f, true),  // Saw
+                MakeToothedSprite(96, 5, 0.42f, true),   // Star
+                MakeToothedSprite(96, 10, 0.72f, false)  // Gear
+            };
 
-                Transform canvas = BuildCanvas();
-                BuildOpenButton(canvas);
-                BuildShop(canvas);
-            }
+            Transform canvas = BuildCanvas();
+            BuildOpenButton(canvas);
+            BuildShop(canvas);
 
             Show(); // the shop is the pre-game screen
-        }
-
-        /// <summary>
-        /// Scene-based UI zaten var — buton dinleyicilerini bağla ve sprite'ları ata.
-        /// shopRoot Inspector'dan atanmışsa çağrılır.
-        /// </summary>
-        private void WireSceneUI()
-        {
-            // Sprite'lar Inspector'dan atanmamışsa runtime'da üret
-            if (rounded == null) rounded = MakeRoundedSprite(24);
-            if (circle == null) circle = MakeCircleSprite(96);
-            if (shapeSprites == null || shapeSprites.Length == 0)
-            {
-                shapeSprites = new[]
-                {
-                    circle,
-                    MakeToothedSprite(96, 16, 0.78f, true),
-                    MakeToothedSprite(96, 5, 0.42f, true),
-                    MakeToothedSprite(96, 10, 0.72f, false)
-                };
-            }
-
-            // Buton dinleyicilerini bağla
-            if (openButton != null)
-            {
-                var btn = openButton.GetComponent<Button>();
-                if (btn != null) btn.onClick.AddListener(Open);
-            }
-            if (playButton != null) playButton.onClick.AddListener(OnPlay);
-            if (closeButton != null) closeButton.onClick.AddListener(Close);
-
-            // Kart butonlarını bağla ve sprite'ları ata
-            var skins = SkinManager.Instance.availableSkins;
-            foreach (var c in cards)
-            {
-                if (c.preview == null) continue;
-                int captured = c.index;
-                var cardBtn = c.preview.GetComponentInParent<Button>();
-                if (cardBtn != null) cardBtn.onClick.AddListener(() => OnCardClicked(captured));
-
-                if (c.index < skins.Count)
-                {
-                    c.preview.sprite = shapeSprites[(int)skins[c.index].shape];
-                    c.preview.raycastTarget = false;
-                }
-                if (c.accentDot != null)
-                {
-                    c.accentDot.sprite = circle;
-                    c.accentDot.raycastTarget = false;
-                }
-            }
         }
 
         private void EnsureSkinManager()
@@ -203,7 +139,6 @@ namespace SpinForward.UI
 
         private void BuildShop(Transform canvas)
         {
-            cards.Clear();
             shopRoot = new GameObject("ShopRoot", typeof(RectTransform));
             var rootRt = (RectTransform)shopRoot.transform;
             rootRt.SetParent(canvas, false);
@@ -281,9 +216,6 @@ namespace SpinForward.UI
         {
             IsOpen = true;
             shopRoot.SetActive(true);
-            var gr = GetComponentInParent<GraphicRaycaster>();
-            if (gr == null) gr = GetComponent<GraphicRaycaster>();
-            if (gr != null) gr.enabled = true;
             Refresh();
         }
 
@@ -291,11 +223,6 @@ namespace SpinForward.UI
         {
             IsOpen = false;
             shopRoot.SetActive(false);
-            // Canvas'ın raycaster'ını kapat — aksi halde gizli butonlar
-            // joystick/dokunma inputunu yutar ve spinner hareket etmez.
-            var gr = GetComponentInParent<GraphicRaycaster>();
-            if (gr == null) gr = GetComponent<GraphicRaycaster>();
-            if (gr != null) gr.enabled = false;
             Time.timeScale = 1f;
         }
 

@@ -37,35 +37,18 @@ namespace SpinForward.UI
         [SerializeField] private Color panelColor = new Color(0.10f, 0.11f, 0.16f, 0.99f);
         [SerializeField] private Color accent = new Color(0.2f, 0.85f, 1f);
 
-        [SerializeField] private Sprite rounded;
-        [SerializeField] private GameObject root;
-        [SerializeField] private GameObject openButton;
-        [SerializeField] private Button closeButton;
+        private Sprite rounded;
+        private GameObject root;
+        private GameObject openButton;
 
         private void Start()
         {
             EnsureEventSystem();
+            rounded = MakeRoundedSprite(20);
 
-            if (root != null)
-            {
-                // UI sahnede zaten var — sadece butonları bağla
-                if (rounded == null) rounded = MakeRoundedSprite(20);
-                if (openButton != null)
-                {
-                    var btn = openButton.GetComponent<Button>();
-                    if (btn != null) btn.onClick.AddListener(Show);
-                }
-                if (closeButton != null) closeButton.onClick.AddListener(Close);
-            }
-            else
-            {
-                // UI yok — koddan oluştur (orijinal davranış)
-                rounded = MakeRoundedSprite(20);
-                Transform canvas = BuildCanvas();
-                BuildOpenButton(canvas);
-                BuildGuide(canvas);
-            }
-
+            Transform canvas = BuildCanvas();
+            BuildOpenButton(canvas);
+            BuildGuide(canvas);
             root.SetActive(false);
 
             if (PlayerPrefs.GetInt("SeenGuide", 0) == 0) // show once on first launch
@@ -85,23 +68,8 @@ namespace SpinForward.UI
                 openButton.SetActive(show);
         }
 
-        private void Show()
-        {
-            IsOpen = true;
-            root.SetActive(true);
-            var gr = GetComponentInParent<GraphicRaycaster>();
-            if (gr == null) gr = GetComponent<GraphicRaycaster>();
-            if (gr != null) gr.enabled = true;
-        }
-
-        private void Close()
-        {
-            IsOpen = false;
-            root.SetActive(false);
-            var gr = GetComponentInParent<GraphicRaycaster>();
-            if (gr == null) gr = GetComponent<GraphicRaycaster>();
-            if (gr != null) gr.enabled = false;
-        }
+        private void Show() { IsOpen = true; root.SetActive(true); }
+        private void Close() { IsOpen = false; root.SetActive(false); }
 
         private void EnsureEventSystem()
         {

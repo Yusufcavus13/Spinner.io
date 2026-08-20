@@ -1,8 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
 
 namespace SpinForward.Player
 {
@@ -44,10 +42,9 @@ namespace SpinForward.Player
 
             if (pressed && !active)
             {
-                // Ignore presses that land on an actual BUTTON (upgrade / shop buttons),
-                // so tapping them doesn't also steer the spinner. A plain decorative panel
-                // or full-screen backdrop must NOT block steering (that froze the spinner).
-                if (IsPointerOverButton(screenPos))
+                // Ignore presses that land on a UI element (e.g. upgrade buttons),
+                // so tapping the shop doesn't also steer the spinner.
+                if (IsPointerOverUI())
                     return;
 
                 active = true;
@@ -73,27 +70,9 @@ namespace SpinForward.Player
             }
         }
 
-        private static readonly List<RaycastResult> uiRaycastHits = new List<RaycastResult>();
-
-        // True only if the press is over an interactive control (Button/Toggle/etc.), NOT a
-        // plain image or backdrop. Using IsPointerOverGameObject() here was wrong: any
-        // raycast-catching panel over the play area would block the joystick entirely.
-        private static bool IsPointerOverButton(Vector2 screenPos)
+        private static bool IsPointerOverUI()
         {
-            if (EventSystem.current == null)
-                return false;
-
-            var data = new PointerEventData(EventSystem.current) { position = screenPos };
-            uiRaycastHits.Clear();
-            EventSystem.current.RaycastAll(data, uiRaycastHits);
-
-            for (int i = 0; i < uiRaycastHits.Count; i++)
-            {
-                GameObject go = uiRaycastHits[i].gameObject;
-                if (go != null && go.GetComponentInParent<Selectable>() != null)
-                    return true; // a real button/toggle - don't steer
-            }
-            return false;
+            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
         }
 
         private Vector2 ScreenToCanvas(Vector2 screenPos)
